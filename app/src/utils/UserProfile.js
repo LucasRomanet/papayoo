@@ -7,7 +7,7 @@ class UserProfile {
     static player;
     static logged;
     
-    static _initialize(){
+    static constructor(){
         this.socket = io(Domain.scheme+'://'+Domain.host, {path: Domain.base+'/api/ws'});
         this.player = {
             name: "Guest",

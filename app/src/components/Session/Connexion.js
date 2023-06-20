@@ -1,19 +1,15 @@
 import React, {Component} from "react";
 
-import {redirect} from "react-router-dom";
-
 import Modal from 'react-bootstrap/Modal';
 
 import UserProfile from '../../utils/UserProfile';
 import {getPlayer, login} from "../../api";
 
-const DEV = false;
-
 class Connexion extends Component {
 
     constructor(props) {
         super(props);
-        if (DEV) {
+        if (process.env.NODE_ENV = 'development') {
             this.state = {
                 name: 'Jeremy#0001',
                 password: 'Jeremy',
