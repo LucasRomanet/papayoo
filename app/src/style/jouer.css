@@ -1,0 +1,15 @@
+.jouer-form {
+    margin: auto;
+    flex-direction: column;
+}
+
+.divHolder {
+    justify-content: space-around;
+    align-items: center;
+    display: flex;
+    margin-top: 2em;
+}
+
+.blank {
+    width: 1em;
+}

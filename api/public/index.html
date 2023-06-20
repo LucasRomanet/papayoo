@@ -1,0 +1,43 @@
+<html>
+    <head>
+        <title>test</title>
+    </head>
+    <body>
+
+    <h1>Register</h1>
+    <form>
+        <div>
+            <label for="registerName">Name</label>
+            <input type="text" id="registerName" name="registerName" required>
+        </div>
+        <div>
+            <label for="registerPassword">Password</label>
+            <input type="password" id="registerPassword" name="registerPassword" required>
+        </div>
+    </form>
+    <button onclick="register()">Register</button>
+
+
+
+    <h1>Login</h1>
+    <form>
+        <div>
+            <label for="loginUsername">Username</label>
+            <input type="text" id="loginUsername" name="loginUsername" required>
+        </div>
+        <div>
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" name="loginPassword" required>
+        </div>
+        <div>
+            <label for="reponsapi">Reponse api</label>
+            <input type="text" id="reponsapi" name="reponsapi" required>
+        </div>
+    </form>
+    <button onclick="login()">Login</button>
+
+    <button onclick="start()">Start</button>
+
+    </body>
+    <script src="socket.js"></script>
+</html>

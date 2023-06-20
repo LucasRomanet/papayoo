@@ -1,0 +1,70 @@
+form {
+    text-align: left;
+}
+
+form input {
+    width: 100%;
+    border-radius: 3px;
+    border: 1px solid #ced4da;
+    padding: 5px 10px;
+}
+
+form .form-part {
+    margin-bottom: .7rem;
+}
+
+button {
+    border: 0;
+    padding: 5px 12px;
+    border-radius: 5px!important;
+    transition: background-color .2s;
+}
+
+button.btn-blue {
+    color: #fff;
+    background-color: #007bff;
+}
+
+button.btn-blue:hover {
+    background-color: #0069D9;
+}
+
+
+button.btn-red {
+    color: #fff;
+    background-color: #D9534F;
+}
+
+button.btn-red:hover {
+    background-color: #C9302C;
+}
+
+button[disabled], button[disabled]:hover {
+    background-color: gray;
+}
+
+.accueil-wrapper, .rules-wrapper, .classement-wrapper, .contact-wrapper {
+    background-color: #1e2a38;
+    color: white;
+    text-align: left;
+    padding: 3% 20% 10% 20%;
+}
+.accueil-wrapper:after {
+    height: 3%;
+    width: 25%;
+    position: absolute;
+    margin-top: 3em;
+    display: block;
+    content: " ";
+    background-image: url('../img/fondbleu.svg');
+    background-repeat: no-repeat;
+}
+.chat-wrapper {
+    color: black;
+}
+.opponent-wrapper, .pool-wrapper, .hand-wrapper, .player-wrapper, .table-wrapper, .game-wrapper, .end-wrapper, .jouer-wrapper {
+    color: white;
+}
+.js-copytextarea {
+    color: orange;
+}

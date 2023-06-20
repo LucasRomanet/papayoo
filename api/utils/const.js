@@ -1,0 +1,8 @@
+const MIN_NAME_LENGTH = 1;
+const MAX_NAME_LENGTH = 32;
+
+const TAG_MIN = 1;
+const TAG_MAX = 9999;
+const TAG_DIGITS = 4;
+
+module.exports = { MIN_NAME_LENGTH, MAX_NAME_LENGTH, TAG_MIN, TAG_MAX, TAG_DIGITS }

@@ -1,0 +1,113 @@
+.game-wrapper {
+  width: 70%;
+  margin: auto;
+}
+
+.hand-wrapper, .pool-wrapper {
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    position: relative;
+}
+.hand-wrapper{
+    min-height: 200px;
+    padding: 20px 60px 0px 0px;
+}
+.pool-wrapper {
+    min-height: 300px;
+    padding: 50px 60px 40px 60px;
+    border-bottom: 1px dashed black;
+}
+.card-container {
+    margin-left: -30px;
+    cursor: pointer;
+    margin: 2px;
+    border-radius: 6px;
+    min-width: 96px;
+    height: 160px;
+    font-weight: bold;
+    font-size: 1.5em;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+.card-overlay {
+    border-radius: 6px;
+    margin: 0;
+    height: 100%;
+    display: flex
+}
+.card-overlay p{
+    margin: 0;
+    padding: 4px;
+
+}
+.card-overlay .bottom-right{
+    text-align: right;
+    margin-left: auto;
+    align-self: flex-end;
+
+}
+.opponent-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+.table-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+.table-wrapper > * {
+    margin: 0 20px;
+}
+.maudite, .playable {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    height: 85px;
+}
+.player-wrapper {
+    border: 1px solid black;
+    opacity: .9;
+    padding: 5px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    margin: auto;
+    text-align: center;
+    font-family: arial;
+    margin: 50px;
+}
+.must-play {
+    border: 1px solid red;
+    font-weight: bold;
+}
+.coeur{
+    background-image: url('../img/coeur.png');
+}
+.carreau{
+    background-image: url('../img/carreau.png');
+}
+.pique{
+    background-image: url('../img/pique.png');
+}
+.trefle{
+    background-image: url('../img/trefle.png');
+}
+.payoo, .indefini{
+
+    background-image: url('../img/payoo.png');
+    color: white;
+}
+.indefini{
+    opacity: .2;
+    filter: invert(100%);
+    -webkit-filter: invert(100%);
+}
+.buttonHolder {
+    width: 40%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}

@@ -1,0 +1,56 @@
+ol, ul, li {
+  list-style: none;
+}
+
+.imgHolder img {
+  width: 50%;
+}
+
+.header-wrapper{
+  background-color: #01294f;
+  color:#ffffff;
+  display:flex;
+  flex-direction: column;
+}
+
+.header-wrapper img {
+  margin: 1em 10em;
+  width: 40%;
+  align-self: center;
+}
+.rules-wrapper {
+  text-align: left;
+}
+
+.rules-wrapper p {
+  font-size: 1.2em;
+}
+
+.jouer-navbar {
+  font-family: 'Roboto', cursive;
+  display: flex;
+  margin-top: 2em;
+  justify-content: space-around;
+}
+
+li {
+  font-size: 2em;
+}
+
+.navbar_wrapper {
+  align-items: center;
+  width: 55%;
+}
+
+.navbar {
+  display: flex;
+}
+
+.navbar a {
+  text-decoration: none;
+  color: white;
+}
+
+.navbar a:hover {
+  color: white;
+}
