@@ -8,7 +8,8 @@ class UserProfile {
     static logged;
     
     static constructor(){
-        this.socket = io(Domain.scheme+'://'+Domain.host, {path: Domain.base+'/api/ws'});
+
+        this.socket = io(Domain.host, {path: Domain.base+'/api/ws'});
         this.player = {
             name: "Guest",
             tag: "0000",
