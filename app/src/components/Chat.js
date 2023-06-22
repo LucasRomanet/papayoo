@@ -1,8 +1,8 @@
 import React, { Component } from "react";
-import "./style/chat.css";
+import "../style/chat.css";
 
-import UserChat from './utils/UserChat';
-import UserProfile from './utils/UserProfile';
+import UserChat from '../utils/UserChat';
+import UserProfile from '../utils/UserProfile';
 const socket = UserProfile.getSocket();
 
 class Chat extends Component{

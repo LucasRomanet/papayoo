@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import Chat from "./Chat.js";
+import Chat from "../Chat.js";
 
 function byScore(a, b) {return a.score-b.score};
 
@@ -12,7 +12,7 @@ class End extends Component {
     }
     componentDidMount() {
         this.setState({
-            playerScores: this.props.location.state.playerScores.sort(byScore)
+            playerScores: this.state.playerScores.sort(byScore)
         });
     }
     render() {
@@ -29,7 +29,7 @@ class End extends Component {
                         </div>
                     )
                 }
-                <Chat code={this.props.location.state.code}/>
+                <Chat code={this.state.code}/>
             </div>
         );
     }

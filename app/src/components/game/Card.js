@@ -12,12 +12,12 @@ function Card({index, card, playable, context, highest, handleClick}) {
                     {...(playable && context==="hand") ? provided.draggableProps:""}
                     {...provided.dragHandleProps}
                     style={{
-                          userSelect: "none",
-                          marginLeft: (context==="hand")
-                            ? "-35px"
-                            : "-20px",
-                          ...(playable || context==="pool" ? provided.draggableProps.style: null : '')
-                          }
+                            userSelect: "none",
+                            marginLeft: (context==="hand")
+                                ? "-35px"
+                                : "-20px",
+                            ...(playable || context==="pool" ? provided.draggableProps.style: null : '')
+                            }
                         }
                     id={card.id}
                     className={[card.color, "card-container"].join(' ')}

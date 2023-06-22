@@ -1,8 +1,8 @@
 import React, { Component } from "react";
-import logo from "./img/logo_transparent.svg";
-import "./style/header.css";
+import logo from "../img/logo_transparent.svg";
+import "../style/header.css";
 import Profile from "./Profile";
-import Domain from './utils/Domain';
+import Domain from '../utils/Domain';
 Domain.constructor();
 
 class Header extends Component {

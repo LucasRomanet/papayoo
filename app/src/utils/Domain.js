@@ -2,25 +2,21 @@ class Domain {
     static base = process.env.REACT_APP_BASE;
     static host = process.env.REACT_APP_HOST;
     static port = {
-        app: 3000,
-        api: 3001
+        app: process.env.REACT_APP_PORT,
+        api: process.env.REACT_APP_PORT_API
     };
     static getURL() {
-        return this.host+this.base;
+        return this.host+':'+this.port.app+this.base;
     }
     static getAPI() {
-        return this.host+this.base+'/api';
+        let scheme = this.port.api === 443 ? 'https://' : 'http://' ;
+        return scheme+this.host+':'+this.port.api+'/api';
+    }
+    static getWSBaseURL() {
+        let scheme = this.port.api === 443 ? 'https://' : 'http://' ;
+        return scheme+this.host+':'+this.port.api;
     }
 }
 
-
-window.addEventListener('load', function (e) {
-    if(window.location.pathname !== Domain.base
-        && window.location.pathname !== Domain.base+"/rules"
-        && window.location.pathname !== Domain.base+"/contact"
-        && window.location.pathname !== Domain.base+"/classement"){
-       window.location.replace(Domain.base);
-    }
-});
 
 export default Domain;

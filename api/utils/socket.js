@@ -13,8 +13,8 @@ function notify(gameCode){
         const playerSocket = playerToSocket.get(nametag(p));
         if (!playerSocket)
             continue;
-
-        if (game.status === gameStatus.playing){
+        
+        if (game.status === gameStatus.PLAYING){
             hand = currentGamesHands.get(gameCode).get(nametag(p));
             json = JSON.stringify(Object.assign(JSON.parse(json),{hand : hand}));
         }

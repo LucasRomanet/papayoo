@@ -2,9 +2,7 @@ import React, { Component } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Modal from 'react-bootstrap/Modal';
 
-import UserProfile from './utils/UserProfile';
-
-class PlayerProfile extends Component {
+class Stats extends Component {
 
     constructor(props) {
         super(props);
@@ -36,4 +34,4 @@ class PlayerProfile extends Component {
     }
 }
 
-export default PlayerProfile;
+export default Stats;

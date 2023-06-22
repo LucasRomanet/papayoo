@@ -1,12 +1,11 @@
 import React, { Component } from "react";
-import Connexion from "./components/Session/Connexion"
-import PlayerProfile from "./PlayerProfile"
-import Inscription from "./components/Session/Inscription"
+import Connexion from "../components/session/Connexion"
+import Stats from "./game/Stats"
+import Inscription from "../components/session/Inscription"
 import Navbar from "./Navbar.js";
-import "./style/profile.css";
+import "../style/profile.css";
 
-import Domain from './utils/Domain';
-import UserProfile from './utils/UserProfile';
+import UserProfile from '../utils/UserProfile';
 UserProfile.constructor();
 
 class Profile extends Component {
@@ -14,53 +13,54 @@ class Profile extends Component {
         super(props);
         this.state = {
              modalConnexionOpen: false,
-             modalInscriptionnOpen: false,
-             modalPlayerProfilOpen: false,
+             modalInscriptionOpen: false,
+             modalStatsOpen: false,
              player: {},
              loggedIn: false
         }
         this.handleModalConnexionOpen = this.handleModalConnexionOpen.bind(this);
         this.handleModalInscriptionOpen = this.handleModalInscriptionOpen.bind(this);
         this.notify = this.notify.bind(this)
-        this.handleModalPlayerProfileOpen = this.handleModalPlayerProfileOpen.bind(this);
-      };
+        this.handleModalStatsOpen = this.handleModalStatsOpen.bind(this);
+        };
 
-      componentDidMount() {
-          if (UserProfile.loggedIn()) this.setState({
-              player: UserProfile.getPlayer()
-          })
-      };
-      handleModalPlayerProfileOpen() {
-        this.setState((prevState) => {
-            return {
-                modalPlayerProfilOpen: !prevState.modalPlayerProfilOpen
-            }
-        });
-      }
-      handleModalConnexionOpen() {
-         this.setState((prevState) => {
-            return{
-               modalConnexionOpen: !prevState.modalConnexionOpen
-            }
-        });
-      };
-      handleModalInscriptionOpen() {
-         this.setState((prevState) => {
-            return{
-               modalInscriptionOpen: !prevState.modalInscriptionOpen
-            }
-        });
-      };
-      handleDeconnexion(){
-        window.location.replace(Domain.getURL());
-      };
-      notify() {
-          this.setState({
-              player: UserProfile.getPlayer(),
-              loggedIn: UserProfile.loggedIn()
-          });
-      }
-      render() {
+        componentDidMount() {
+            if (UserProfile.loggedIn()) this.setState({
+                player: UserProfile.getPlayer()
+            })
+        };
+        handleModalStatsOpen() {
+            this.setState((prevState) => {
+                return {
+                    modalStatsOpen: !prevState.modalStatsOpen
+                }
+            });
+        }
+        handleModalConnexionOpen() {
+            this.setState((prevState) => {
+                return{
+                modalConnexionOpen: !prevState.modalConnexionOpen
+                }
+            });
+        };
+        handleModalInscriptionOpen() {
+            this.setState((prevState) => {
+                return{
+                modalInscriptionOpen: !prevState.modalInscriptionOpen
+                }
+            });
+        };
+        handleDeconnexion(){
+            // TODO
+            return;
+        };
+        notify() {
+            this.setState({
+                player: UserProfile.getPlayer(),
+                loggedIn: UserProfile.loggedIn()
+            });
+        }
+        render() {
             let welcome = "Vous n'êtes pas connecté";
             if (this.state.loggedIn) welcome = "Bienvenue "+this.state.player.name+"#"+this.state.player.tag+"!";
             return (
@@ -78,7 +78,7 @@ class Profile extends Component {
                                     </button>
                                 </div>
                                 : <div>
-                                    <button onClick={this.handleModalPlayerProfileOpen} className="btn btn-danger">
+                                    <button onClick={this.handleModalStatsOpen} className="btn btn-danger">
                                         Profil
                                     </button>
                                     <button onClick={this.handleDeconnexion} className="btn btn-danger">
@@ -98,9 +98,9 @@ class Profile extends Component {
                            handleModalOpen={this.handleModalInscriptionOpen}
                            notify={this.notify}
                         />
-                        <PlayerProfile
-                            modalOpen={this.state.modalPlayerProfilOpen}
-                            handleModalOpen={this.handleModalPlayerProfileOpen}
+                        <Stats
+                            modalOpen={this.state.modalStatsOpen}
+                            handleModalOpen={this.handleModalStatsOpen}
                             player={this.state.player}
                         />
                     </div>

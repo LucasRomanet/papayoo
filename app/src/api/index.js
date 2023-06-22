@@ -6,6 +6,7 @@ export const register = (player) => {
 }
 
 export const getAllPlayers = () => {
+    console.log(Domain.getAPI()+'/player/');
     return axios.get(Domain.getAPI()+'/player/');
 }
 

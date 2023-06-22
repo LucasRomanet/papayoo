@@ -2,9 +2,9 @@ const express = require('express');
 
 const { PLAYER_DOESNT_EXIST, PLAYER_IN_GAME, PLAYER_NOT_ONLINE,
     PLAYER_IN_OTHER_GAME, INCORRECT_TOKEN, GAME_CODE_UNKNOWN,
-    GAME_IS_FULL, GAME_IS_ALREADY_STARTED } = require("../utils/errors/messagesConsts");
+    GAME_IS_FULL, GAME_IS_ALREADY_STARTED } = require("../utils/error/messagesConsts");
 
-const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError");
+const { PapayooError, getErrorMessage } = require("../utils/error/PapayooError");
 const { isCorrectName, isCorrectTag } = require("../model/helpers/playerHelper");
 const router = express.Router();
 
@@ -29,7 +29,6 @@ router.post('/', (req, res) => {
     */
     try {
         const { name, tag, token } = req.body;
-
         if (!canCreateGame(name, tag, token)) {
             return res.status(400).send();
         }
@@ -136,7 +135,7 @@ function canJoinGame(name, tag, token, gameCode) {
         throw new PapayooError(PLAYER_IN_OTHER_GAME);
     }
 
-    if (game.status !== gameStatus.standby) {
+    if (game.status !== gameStatus.WAITING) {
         throw new PapayooError(GAME_IS_ALREADY_STARTED);
     }
 

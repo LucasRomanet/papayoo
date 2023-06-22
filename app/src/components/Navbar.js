@@ -1,8 +1,6 @@
 import React, { Component } from "react";
-import logo from "./img/papayoo_logo.jpg";
 import {Link} from "react-router-dom";
 
-import UserProfile from './utils/UserProfile';
 
 class Navbar extends Component {
     constructor(props) {

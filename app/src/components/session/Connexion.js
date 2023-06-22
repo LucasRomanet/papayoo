@@ -1,29 +1,30 @@
 import React, {Component} from "react";
-
+import {Navigate} from 'react-router-dom';
 import Modal from 'react-bootstrap/Modal';
 
 import UserProfile from '../../utils/UserProfile';
 import {getPlayer, login} from "../../api";
+import withRouter from "../../utils/withRouter";
 
 class Connexion extends Component {
 
     constructor(props) {
         super(props);
-        if (process.env.NODE_ENV = 'development') {
+        if (process.env.NODE_ENV === 'development') {
             this.state = {
                 name: 'Jeremy#0001',
                 password: 'Jeremy',
-                logged: false,
                 loading: false
             }
         } else {
             this.state = {
                 name: '',
                 password: '',
-                logged: false,
                 loading: false
             }
         }
+
+        this.navigate = props.router.navigate;
         
 
         this.handleInput = this.handleInput.bind(this);
@@ -49,7 +50,7 @@ class Connexion extends Component {
         event.preventDefault();
 
         const splitName = this.state.name.split('#');
-        if (this.state.loading || this.state.logged || splitName.length < 2 || this.state.password.length === 0)
+        if (this.state.loading || splitName.length < 2 || this.state.password.length === 0)
             return;
 
         await this.loginPlayer(splitName[0], splitName[1], this.state.password);
@@ -93,9 +94,9 @@ class Connexion extends Component {
             this.props.notify();
 
             this.setState({
-                logged: true,
                 loading: false
             });
+            this.navigate('/jouer');
         }).catch(error => {
             if (error.response) console.error(error.message);
             this.setState({ loading: false });
@@ -103,13 +104,6 @@ class Connexion extends Component {
     }
 
     render() {
-        if (this.state.logged) {
-            return (
-                <redirect to={{
-                    pathname: "/jouer",
-                }}/>
-            )
-        }
         return (
             <Modal show={this.props.modalOpen} onHide={this.props.handleModalOpen}>
                 <Modal.Header closeButton>
@@ -159,4 +153,4 @@ class Connexion extends Component {
 }
 
 
-export default Connexion;
+export default withRouter(Connexion);

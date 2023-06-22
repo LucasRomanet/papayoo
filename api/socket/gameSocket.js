@@ -13,7 +13,7 @@ function loadGameSocket(socket){
         if(currentGame.has(data.gameCode)){
             let game = currentGame.get(data.gameCode);
             if(nametag(game.player.values().next().value) == nametag(socketToPlayer.get(socket).player) && game.player.size > 2 && !currentGamesHands.has(data.gameCode)){
-                game.status = gameStatus.playing;
+                game.status = gameStatus.PLAYING;
                 let hands = distributeCard(game);
                 currentGamesHands.set(data.gameCode, hands);
                 shufflePlayer(data.gameCode);
@@ -125,7 +125,7 @@ function loadGameSocket(socket){
                             game.mustPlay = losingCard.player;
                             game.pool = new Array();
                             if(hand.hand.length<1){
-                                game.status = gameStatus.finish;
+                                game.status = gameStatus.ENDING;
                                 for(let v of game.playerScores.values()){
                                     PlayerModel.find({name : v.player.split('#')[0], tag : v.player.split('#')[1]}, {'_id': 0, '__v':0, 'password':0}).exec((err, data) => {
                                         if (err){return;}
@@ -169,7 +169,7 @@ function loadGameSocket(socket){
             let player = socketToPlayer.get(socket).player;
             let json =JSON.stringify({player: nametag(player), text: data.text});
             for (let p of game.player.values()){
-                if(game.status!=gameStatus.finish){
+                if(game.status!=gameStatus.ENDING){
                     playerToSocket.get(nametag(p)).socket.emit("message", json);
                 }
             }

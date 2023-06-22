@@ -6,8 +6,8 @@ const { getAllPlayers, getOnePlayer, createPlayer, updateOnePlayer, deleteOnePla
 
 const { currentPlayer, playerToSocket,makeJoinCode, Player, nametag, isInGame } = require("../utils/game.js");
 
-const { PLAYER_DOESNT_EXIST, PLAYER_IS_IN_GAME } = require("../utils/errors/messagesConsts");
-const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError");
+const { PLAYER_DOESNT_EXIST, PLAYER_IS_IN_GAME } = require("../utils/error/messagesConsts");
+const { PapayooError, getErrorMessage } = require("../utils/error/PapayooError");
 
 // this is our get method
 // this method fetches all available data in our database
@@ -53,10 +53,10 @@ router.post('/add', async (req, res) => {
 
         currentPlayer.set(createdPlayerNametag, new Player(createdPlayer.name, createdPlayer.tag, createdPlayer.games, createdPlayer.score))
 
-        let token = makeJoinCode(10);
-        playerToSocket.set(createdPlayerNametag, { token });
+        let _token = makeJoinCode(10);
+        playerToSocket.set(createdPlayerNametag, { token: _token });
 
-        let hashedToken = await bcrypt.hash(token, 10);
+        let hashedToken = await bcrypt.hash(_token, 10);
         return res.json({tag , token: hashedToken});
     } catch (e) {
         return res.status(500).json( { message: getErrorMessage('Erreur lors de la création du joueur', e) } )

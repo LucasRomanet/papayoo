@@ -7,9 +7,8 @@ class UserProfile {
     static player;
     static logged;
     
-    static constructor(){
-
-        this.socket = io(Domain.host, {path: Domain.base+'/api/ws'});
+    static _initialize(){
+        this.socket = io(Domain.getWSBaseURL(), {path: '/api/ws'});
         this.player = {
             name: "Guest",
             tag: "0000",
@@ -44,5 +43,7 @@ class UserProfile {
        return nt.name+'#'+nt.tag;
    };
 }
+
+UserProfile._initialize();
 
 export default UserProfile;

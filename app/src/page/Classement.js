@@ -1,10 +1,8 @@
 import React, { Component } from "react";
-import "./style/classement.css";
-import axios from 'axios';
+import "../style/classement.css";
 
-import UserProfile from './utils/UserProfile';
-import Domain from './utils/Domain';
-import {getAllPlayers} from "./api";
+import UserProfile from '../utils/UserProfile';
+import {getAllPlayers} from "../api";
 
 function byGames(a, b) {return a.games-b.games};
 function byScore(a, b) {return a.score-b.score};

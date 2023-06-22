@@ -13,9 +13,9 @@ function initData(){
 }
 
 const gameStatus = Object.freeze({
-    standby:{value : 1, name : "standby"},
-    playing:{value : 2, name : "playing"},
-    finish:{value : 3, name : "finish"}
+    WAITING: 'WAITING',
+    PLAYING: 'PLAYING',
+    ENDING: 'ENDING'
 });
 const cardColor = Object.freeze({
     payoo:1,
@@ -32,7 +32,7 @@ class Game{
         this.code = code;
         this.player = new Map();
         this.player.set(nametag, currentPlayer.get(nametag));
-        this.status = gameStatus.standby;
+        this.status = gameStatus.WAITING;
         this.flicked = false;
         this.pool = new Array();
         this.mustPlay = "";

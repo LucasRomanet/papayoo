@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import tableau from "./img/tableau.png";
+import tableau from "../img/tableau.png";
 
 class Rules extends Component {
     render() {
