@@ -12,24 +12,27 @@ import Jouer from "./page/Jouer";
 import Game from './page/Game';
 import Classement from './page/Classement';
 import NotFoundPage from './components/error/404';
-import { PlayerProvider } from './context/player/PlayerContext'
+import GameProvider from './context/game/GameProvider'
+import PlayerProvider from './context/player/PlayerProvider'
 
 function App() {
     return (
-        <PlayerProvider>
-            <Router basename={process.env.REACT_APP_BASE}>
-                <Header/>
-                <Routes>
-                    <Route path="/contact" element={<Contact/>}/>
-                    <Route path="/partie/:code" element={<Game/>}/>
-                    <Route path="/rules" element={<Rules/>}/>
-                    <Route path="/jouer" element={<Jouer/>}/>
-                    <Route path="/classement" element={<Classement/>}/>
-                    <Route path="/" element={<Accueil/>}/>
-                    <Route element={<NotFoundPage/>}/>
-                </Routes>
-            </Router>
-        </PlayerProvider>
+        <GameProvider>
+            <PlayerProvider>
+                <Router basename={process.env.REACT_APP_BASE}>
+                    <Header/>
+                    <Routes>
+                        <Route path="/contact" element={<Contact/>}/>
+                        <Route path="/partie/:code" element={<Game/>}/>
+                        <Route path="/rules" element={<Rules/>}/>
+                        <Route path="/jouer" element={<Jouer/>}/>
+                        <Route path="/classement" element={<Classement/>}/>
+                        <Route path="/" element={<Accueil/>}/>
+                        <Route element={<NotFoundPage/>}/>
+                    </Routes>
+                </Router>
+            </PlayerProvider>
+        </GameProvider>
     );
 }
 

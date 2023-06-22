@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useContext, useState, useEffect } from "react";
 import withRouter from "../utils/withRouter.js";
 import UserProfile from '../utils/UserProfile.js';
 import { joinGame } from "../api";
@@ -6,28 +6,34 @@ import Chat from "../components/Chat.js";
 import Lobby from "../components/game/Lobby.js";
 import Board from "../components/game/Board.js";
 import End from "../components/game/End.js";
+import PlayerContext from "../context/player/PlayerContext";
+import GameContext from "../context/game/GameContext";
 
-class Game extends Component {
+const Game = (props) => {
+    const [code, setCode] = useState(null);
 
-    constructor(props) {
-        super(props);
+    const { player, setPlayer } = useContext(PlayerContext);
+    const { game, setGame } = useContext(GameContext);
 
-        this.state = {
-            code: props.router.params.code
-        }
-
-    }
+    const joueur = {
+        name: 'temp'
+    };
 
     // Réduire l'accès à certaines page aux joueurs connecté
+    useEffect(() => {
+        setCode(props.router.params.code);
+    }, []);
 
-    componentDidMount() {
-        joinGame(this.state.code, {
+    useEffect(() => {
+        if (!code) {
+            return;
+        }
+
+        joinGame(code, {
             ...UserProfile.getPlayer(),
             token: UserProfile.getToken()
         }).then(response => {
-            this.setState({
-                game: response.data
-            });
+            setGame(response.data);
         }).catch(error => {
             if (error.response)
                 switch (error.response.status) {
@@ -35,7 +41,7 @@ class Game extends Component {
                         console.error("Requete malformée, paramètre(s) manquant(s)");
                         break;
                     case 401:
-                        console.error("Le joueur "+this.state.joueur.name+" n'est pas reconnu par le serveur");
+                        console.error("Le joueur "+joueur.name+" n'est pas reconnu par le serveur");
                         break;
                     case 402:
                         console.error("Le joueur est déjà dans une partie");
@@ -51,8 +57,7 @@ class Game extends Component {
                 }
             else console.error(error.message);
         });
-        this.socketFunction();
-    }
+    }, [code]);
 
     // Au lancement : récupère la partie à partir du code (url)
     //      -> si code invalide => go to accueil
@@ -66,23 +71,21 @@ class Game extends Component {
     // - avoir une liste de spectateurs
     // - Passe de TERMINEE = LOBBY => passer les spectateurs dans joueurs
 
-    render() {
-        return (
-            <div className="game-wrapper">
-                {(!this.state.game) 
-                    ? <p>Loading</p>
-                    : (
-                        <div>
-                            {(this.state.game.status === "WAITING") && <Lobby />}
-                            {(this.state.game.status === "PLAYING") && <Board />}
-                            {(this.state.game.status === "ENDING") && <End />}
-                            <Chat code={this.state.code}/>
-                        </div>
-                    )}
-                
-            </div>
-        );
-    }
+    return (
+        <div className="game-wrapper">
+            {(!game) 
+                ? <p>Loading</p>
+                : (
+                    <div>
+                        {(game.status === "WAITING") && <Lobby />}
+                        {(game.status === "PLAYING") && <Board />}
+                        {(game.status === "ENDING") && <End />}
+                        <Chat code={code}/>
+                    </div>
+                )}
+            
+        </div>
+    );
 }
 
 export default withRouter(Game);

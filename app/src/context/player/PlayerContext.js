@@ -1,3 +1,5 @@
 import { createContext } from 'react';
 
-export default PlayerContext = createContext(null);
+const PlayerContext = createContext(null);
+
+export default PlayerContext;

@@ -18,7 +18,7 @@ class Stats extends Component {
         return (
             <Modal show={this.props.modalOpen} onHide={this.props.handleModalOpen}>
                 <Modal.Header closeButton>
-                    <Modal.Title><h2>Description du joueur</h2></Modal.Title>
+                    <Modal.Title><h2>Statistiques du joueur</h2></Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     Pseudo : {this.props.player.name}

@@ -1,9 +1,9 @@
 const PlayerModel = require("../../model/Player");
 
-const { PLAYER_DOESNT_EXIST } = require("../../utils/error/messagesConsts");
+const { PLAYER_DOESNT_EXIST } = require("../../utils/errors/messagesConsts");
 const { MIN_NAME_LENGTH, MAX_NAME_LENGTH, TAG_MIN, TAG_MAX, TAG_DIGITS } = require("../../utils/const");
 
-const { PapayooError, getErrorMessage } = require("../../utils/error/PapayooError");
+const { PapayooError, getErrorMessage } = require("../../utils/errors/PapayooError");
 
 async function getAllPlayers(filter = {}, sort = {}) {
     try {

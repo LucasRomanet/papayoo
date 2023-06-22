@@ -6,8 +6,8 @@ const { getAllPlayers, getOnePlayer, createPlayer, updateOnePlayer, deleteOnePla
 
 const { currentPlayer, playerToSocket,makeJoinCode, Player, nametag, isInGame } = require("../utils/game.js");
 
-const { PLAYER_DOESNT_EXIST, PLAYER_IS_IN_GAME } = require("../utils/error/messagesConsts");
-const { PapayooError, getErrorMessage } = require("../utils/error/PapayooError");
+const { PLAYER_DOESNT_EXIST, PLAYER_IS_IN_GAME } = require("../utils/errors/messagesConsts");
+const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError");
 
 // this is our get method
 // this method fetches all available data in our database

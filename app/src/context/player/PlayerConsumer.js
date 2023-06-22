@@ -1,11 +1,12 @@
 import { useContext } from 'react';
-import { PlayerContext } from './PlayerContext';
+import PlayerContext from './PlayerContext';
 
-export default function withPlayer(Component) {
-    const { player, setPlayer } = useContext(PlayerContext);
+export function withPlayer(Component) {
 
     function ComponentWithPlayerProp(props) {
-        return <Component {...props} player setPlayer />
+        const { player, setPlayer } = useContext(PlayerContext);
+
+        return <Component {...props} player={{player, setPlayer}}/>
     }
 
     return ComponentWithPlayerProp;

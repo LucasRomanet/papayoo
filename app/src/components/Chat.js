@@ -52,7 +52,7 @@ class Chat extends Component{
                 <div className="chat-content">
                 {
                     this.state.message.map((message, index) =>
-                        <p key={index} className="chat-post"><div>{message.player}</div><div>{message.text}</div></p>
+                        <div key={index} className="chat-post"><div>{message.player}</div><div>{message.text}</div></div>
                     )
                 }
                     <div className="chat-input">
