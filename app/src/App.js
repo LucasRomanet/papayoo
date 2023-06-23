@@ -13,12 +13,12 @@ import Game from './page/Game';
 import Classement from './page/Classement';
 import NotFoundPage from './components/error/404';
 import GameProvider from './context/game/GameProvider'
-import PlayerProvider from './context/player/PlayerProvider'
+import UserProvider from './context/user/UserProvider'
 
 function App() {
     return (
         <GameProvider>
-            <PlayerProvider>
+            <UserProvider>
                 <Router basename={process.env.REACT_APP_BASE}>
                     <Header/>
                     <Routes>
@@ -31,7 +31,7 @@ function App() {
                         <Route element={<NotFoundPage/>}/>
                     </Routes>
                 </Router>
-            </PlayerProvider>
+            </UserProvider>
         </GameProvider>
     );
 }

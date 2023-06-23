@@ -1,10 +1,9 @@
-import React, { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import Chat from "../Chat.js";
-import Stats from "./Stats.js";
+import Stats from "../Stats.js";
 import UserProfile from '../../utils/UserProfile.js';
-import PlayerContext from "../../context/player/PlayerContext";
+import UserContext from "../../context/user/UserContext";
 import GameContext from "../../context/game/GameContext";
-const socket = UserProfile.getSocket();
 
 
 const Lobby = (props) => {
@@ -12,7 +11,8 @@ const Lobby = (props) => {
 
     const [isStatModalOpen, setStatModalOpen] = useState(false);
 
-    const { player } = useContext(PlayerContext);
+    const { user } = useContext(UserContext);
+    const socket = user.socket
     const { game, setGame } = useContext(GameContext);
 
     useEffect(() => {
@@ -22,30 +22,9 @@ const Lobby = (props) => {
         });
     }, []);
 
-    useEffect(() => {
-        console.log("Lobby : changement détecté !");
-    }, [game]);
-
-        // state = {
-        //     status: 'STANDBY',
-        //     maxplayer: 0,
-        //     code: '',
-        //     player: [],
-        //     hand: {
-        //         flicked :false,
-        //         hand:[]
-        //     },
-        //     countdown: {
-        //         start: false,
-        //         init: 0,
-        //         remaining: 0,
-        //     },
-        //     host: false,
-        //     currentPlayerInformation: {},
-        // }
     
     const isHost = () => {
-        return UserProfile.nametag(game.player[0]) === UserProfile.nametag(player);
+        return UserProfile.nametag(game.player[0]) === UserProfile.nametag(user);
     }
 
     const handleCopyCode = () => {

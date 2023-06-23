@@ -1,113 +1,95 @@
-import React, { Component } from "react";
-import Connexion from "../components/session/Connexion"
-import Stats from "./game/Stats"
-import Inscription from "../components/session/Inscription"
+import { useContext, useState, useEffect } from "react";
+import Connexion from "../components/session/Connexion";
+import Inscription from "../components/session/Inscription";
+import Stats from "./Stats"
+import UserContext from "../context/user/UserContext";
 import Navbar from "./Navbar.js";
 import "../style/profile.css";
 
 import UserProfile from '../utils/UserProfile';
 UserProfile.constructor();
 
-class Profile extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-             modalConnexionOpen: false,
-             modalInscriptionOpen: false,
-             modalStatsOpen: false,
-             player: {},
-             loggedIn: false
-        }
-        this.handleModalConnexionOpen = this.handleModalConnexionOpen.bind(this);
-        this.handleModalInscriptionOpen = this.handleModalInscriptionOpen.bind(this);
-        this.notify = this.notify.bind(this)
-        this.handleModalStatsOpen = this.handleModalStatsOpen.bind(this);
-        };
+const Profile = () => {
+    const [GET, SET] = [0, 1];
 
-        componentDidMount() {
-            if (UserProfile.loggedIn()) this.setState({
-                player: UserProfile.getPlayer()
-            })
-        };
-        handleModalStatsOpen() {
-            this.setState((prevState) => {
-                return {
-                    modalStatsOpen: !prevState.modalStatsOpen
-                }
-            });
-        }
-        handleModalConnexionOpen() {
-            this.setState((prevState) => {
-                return{
-                modalConnexionOpen: !prevState.modalConnexionOpen
-                }
-            });
-        };
-        handleModalInscriptionOpen() {
-            this.setState((prevState) => {
-                return{
-                modalInscriptionOpen: !prevState.modalInscriptionOpen
-                }
-            });
-        };
-        handleDeconnexion(){
-            // TODO
-            return;
-        };
-        notify() {
-            this.setState({
-                player: UserProfile.getPlayer(),
-                loggedIn: UserProfile.loggedIn()
-            });
-        }
-        render() {
-            let welcome = "Vous n'êtes pas connecté";
-            if (this.state.loggedIn) welcome = "Bienvenue "+this.state.player.name+"#"+this.state.player.tag+"!";
-            return (
-                <div className="login-wrapper">
-                    <div className="profile-wrapper">
-                        <div className="profile-card">
-                            {welcome}
-                            { (!this.state.loggedIn)
-                                ? <div>
-                                    <button onClick={this.handleModalConnexionOpen} className="btn btn-danger">
-                                        Connexion
-                                    </button>
-                                    <button onClick={this.handleModalInscriptionOpen} className="btn btn-danger">
-                                        Inscription
-                                    </button>
-                                </div>
-                                : <div>
-                                    <button onClick={this.handleModalStatsOpen} className="btn btn-danger">
-                                        Profil
-                                    </button>
-                                    <button onClick={this.handleDeconnexion} className="btn btn-danger">
-                                        Deconnexion
-                                    </button>
-                                </div>
-                            }
+    const isModalOpen = {
+        login: useState(false),
+        register: useState(false),
+        stats: useState(false)
+    }
 
+    const [player, setPlayer] = useState({});
+
+    const { user } = useContext(UserContext);
+
+    useEffect(() => {
+        if (user) setPlayer(user.player);
+    }, [user]);
+
+    const toggleModal = (context) => {
+        switch (context) {
+            case 'login':
+                isModalOpen.login[SET](!isModalOpen.login[GET])
+                break;
+            case 'register':
+                isModalOpen.register[SET](!isModalOpen.register[GET])
+                break;
+            case 'stats':
+                isModalOpen.stats[SET](!isModalOpen.stats[GET])
+                break;
+            default:
+                break;
+        }
+    }
+    const logout = () => {
+        // TODO
+        return;
+    };
+    console.log(user);
+    let welcome = "Vous n'êtes pas connecté";
+    if (player) welcome = "Bienvenue "+player.name+"#"+player.tag+"!";
+    return (
+        <div className="login-wrapper">
+            <div className="profile-wrapper">
+                <div className="profile-card">
+                    {welcome}
+                    { (!player)
+                        ? <div>
+                            <button onClick={() => toggleModal('login')} className="btn btn-danger">
+                                Connexion
+                            </button>
+                            <button onClick={() => toggleModal('register')} className="btn btn-danger">
+                                Inscription
+                            </button>
                         </div>
-                        <Connexion
-                           modalOpen={this.state.modalConnexionOpen}
-                           handleModalOpen={this.handleModalConnexionOpen}
-                           notify={this.notify}
-                        />
-                        <Inscription
-                           modalOpen={this.state.modalInscriptionOpen}
-                           handleModalOpen={this.handleModalInscriptionOpen}
-                           notify={this.notify}
-                        />
-                        <Stats
-                            modalOpen={this.state.modalStatsOpen}
-                            handleModalOpen={this.handleModalStatsOpen}
-                            player={this.state.player}
-                        />
-                    </div>
-                    <Navbar loggedIn={this.state.loggedIn}/>
+                        : <div>
+                            <button onClick={() => toggleModal('stats')} className="btn btn-danger">
+                                Profil
+                            </button>
+                            <button onClick={logout} className="btn btn-danger">
+                                Déconnexion
+                            </button>
+                        </div>
+                    }
+
                 </div>
-            );
-      }
+                <Connexion
+                    isModalOpen={isModalOpen.login[GET]}
+                    toggleModal={() => toggleModal('login')}
+                />
+                <Inscription
+                    isModalOpen={isModalOpen.register[GET]}
+                    toggleModal={() => toggleModal('register')}
+                />
+                <Stats
+                    isModalOpen={isModalOpen.stats[GET]}
+                    toggleModal={() => toggleModal('stats')}
+                    player={player}
+                />
+            </div>
+            <Navbar loggedIn={ user.token != null }/>
+        </div>
+    );
 }
 
 export default Profile;

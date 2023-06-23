@@ -6,13 +6,13 @@ import Chat from "../components/Chat.js";
 import Lobby from "../components/game/Lobby.js";
 import Board from "../components/game/Board.js";
 import End from "../components/game/End.js";
-import PlayerContext from "../context/player/PlayerContext";
+import UserContext from "../context/user/UserContext";
 import GameContext from "../context/game/GameContext";
 
 const Game = (props) => {
     const [code, setCode] = useState(null);
 
-    const { player, setPlayer } = useContext(PlayerContext);
+    const { user, setUser } = useContext(UserContext);
     const { game, setGame } = useContext(GameContext);
 
     const joueur = {

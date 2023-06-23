@@ -4,7 +4,7 @@ import Chat from "../Chat.js";
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import '../../style/partie.css';
 import UserProfile from '../../utils/UserProfile.js';
-import Stats from "./Stats.js"
+import Stats from "../Stats.js"
 
 const socket = UserProfile.getSocket();
 
