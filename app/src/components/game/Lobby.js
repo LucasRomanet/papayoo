@@ -6,9 +6,9 @@ import UserContext from "../../context/user/UserContext";
 import GameContext from "../../context/game/GameContext";
 
 
-const Lobby = (props) => {
-    const [playerStat, setPlayerStat] = useState({});
+const Lobby = () => {
 
+    const [playerStats, setPlayerStats] = useState({});
     const [isStatModalOpen, setStatModalOpen] = useState(false);
 
     const { user } = useContext(UserContext);
@@ -43,7 +43,7 @@ const Lobby = (props) => {
     
     const handleModalStatsOpen = (id) => {
         if(id != null) {
-            setPlayerStat(game.player[id]);
+            setPlayerStats(game.player[id]);
         }
         setStatModalOpen(!isStatModalOpen);
     }
@@ -75,12 +75,12 @@ const Lobby = (props) => {
                     onClick={handleSubmit}>
                         Démarrer la partie
             </button>
+            
             <Stats
                 modalOpen={isStatModalOpen}
-                handleModalOpen={handleModalStatsOpen}
-                player={playerStat}
+                toggleModal={handleModalStatsOpen}
+                player={playerStats}
             />
-            <Chat code={game.code}/>
         </div>
     );
 }

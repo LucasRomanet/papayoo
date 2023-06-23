@@ -6,9 +6,6 @@ import UserContext from "../context/user/UserContext";
 import Navbar from "./Navbar.js";
 import "../style/profile.css";
 
-import UserProfile from '../utils/UserProfile';
-UserProfile.constructor();
-
 const Profile = () => {
     const [GET, SET] = [0, 1];
 
@@ -45,15 +42,14 @@ const Profile = () => {
         // TODO
         return;
     };
-    console.log(user);
     let welcome = "Vous n'êtes pas connecté";
-    if (player) welcome = "Bienvenue "+player.name+"#"+player.tag+"!";
+    if (user.token != null) welcome = "Bienvenue "+player.name+"#"+player.tag+"!";
     return (
         <div className="login-wrapper">
             <div className="profile-wrapper">
                 <div className="profile-card">
                     {welcome}
-                    { (!player)
+                    { (user.token == null)
                         ? <div>
                             <button onClick={() => toggleModal('login')} className="btn btn-danger">
                                 Connexion

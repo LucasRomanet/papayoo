@@ -1,12 +1,10 @@
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import UserContext from "../../context/user/UserContext";
-import UserProfile from '../../utils/UserProfile';
 import UserForm from './UserForm';
 import Modal from 'react-bootstrap/Modal';
 
 import { getPlayer, login } from "../../api";
-import withRouter from "../../utils/withRouter";
 
 const Connexion = (props) => {
     
@@ -30,23 +28,37 @@ const Connexion = (props) => {
     const [tag, setTag] = useState(placeholder.tag);
     const [password, setPassword] = useState(placeholder.password);
 
-    const { setUser } = useContext(UserContext);
+    const { user, setUser } = useContext(UserContext);
 
-    const submitValue = async () => {
+    const submitValue = () => {
         const formValues = {
             'name' : name,
             'tag' : tag,
             'password' : password
         }
         
-        const socket = await UserProfile.getSocket();
+        const socket = user.socket;
 
         login(formValues).then(loginResponse => {
-            if (loginResponse.status !== 200)
+            if (loginResponse.status !== 200) {
                 return;
+            }
+            const { name, tag, games, score, token } = loginResponse.data;
+
+            const loggedUser = {...user};
+            loggedUser.token = token;
+            loggedUser.player = { name, tag, games, score };
             
+            setUser(loggedUser);
+
+            props.notify();
+            socket.emit('login', loggedUser);
+            navigate('/jouer');
+            
+            /*
             getPlayer(name, tag).then(statResponse => {
                 const loggedUser = {
+                    socket: user.socket,
                     player: {
                         name: name,
                         tag: tag,
@@ -61,7 +73,7 @@ const Connexion = (props) => {
                 navigate('/jouer');
             }).catch(error => {
                 if (error.statResponse) console.error(error.message);
-            });
+            }); */
         }).catch(error => {
             if (error.loginResponse) console.error(error.message);
         });
@@ -90,4 +102,4 @@ const Connexion = (props) => {
 }
 
 
-export default withRouter(Connexion);
+export default Connexion;

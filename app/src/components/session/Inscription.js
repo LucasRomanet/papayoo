@@ -5,10 +5,8 @@ import UserForm from './UserForm';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Modal from 'react-bootstrap/Modal';
 
-import {getPlayer, register} from '../../api';
+import {register} from '../../api';
 
-
-import UserProfile from '../../utils/UserProfile';
 
 const Inscription = (props) => {
     
@@ -24,39 +22,34 @@ const Inscription = (props) => {
     const [tag, setTag] = useState(placeholder.tag);
     const [password, setPassword] = useState(placeholder.password);
 
-    const { setUser } = useContext(UserContext);
+    const { user, setUser } = useContext(UserContext);
 
 
-    const submitValue = async () => {
+    const submitValue = () => {
         const formValues = {
             'name' : name,
             'tag' : tag,
             'password' : password
         }
         
-        const socket = await UserProfile.getSocket();
+        const socket = user.socket;
 
         register(formValues).then(loginResponse => {
-            if (loginResponse.status !== 200)
+            if (loginResponse.status !== 200) {
                 return;
+            }
+        
+            const { name, tag, games, score, token } = loginResponse.data;
+
+            const loggedUser = {...user};
+            loggedUser.token = token;
+            loggedUser.player = { name, tag, games, score };
             
-            getPlayer(name, tag).then(statResponse => {
-                const loggedUser = {
-                    player: {
-                        name: name,
-                        tag: tag,
-                        games: statResponse.data[0].games,
-                        score: statResponse.data[0].score
-                    },
-                    token: loginResponse.data
-                }
-                setUser(loggedUser);
-                props.notify();
-                socket.emit('login', loggedUser);
-                navigate('/jouer');
-            }).catch(error => {
-                if (error.statResponse) console.error(error.message);
-            });
+            setUser(loggedUser);
+
+            props.notify();
+            socket.emit('login', loggedUser);
+            navigate('/jouer');
         }).catch(error => {
             if (error.loginResponse) console.error(error.message);
         });

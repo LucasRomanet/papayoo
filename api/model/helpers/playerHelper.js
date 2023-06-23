@@ -13,6 +13,14 @@ async function getAllPlayers(filter = {}, sort = {}) {
     }
 }
 
+async function isPlayerExist(filter = {}) {
+    try {
+        const isExist = await PlayerModel.count(filter);
+        return isExist > 0;
+    } catch (e) {
+        throw new PapayooError(getErrorMessage('Erreur lors de la vérification de l\existence du joueur', e));
+    }
+}
 
 async function getOnePlayer(filter = {}, properties) {
     try {
@@ -96,4 +104,4 @@ function getReturnedProperties(properties = null) {
     return properties;
 }
 
-module.exports = { getAllPlayers, getOnePlayer, createPlayer, updateOnePlayer, deleteOnePlayer, getNewTag, isCorrectName, isCorrectTag, isCorrectPassword };
+module.exports = { getAllPlayers, isPlayerExist, getOnePlayer, createPlayer, updateOnePlayer, deleteOnePlayer, getNewTag, isCorrectName, isCorrectTag, isCorrectPassword };

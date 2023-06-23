@@ -1,6 +1,5 @@
-import React, { Component, useContext, useState, useEffect } from "react";
-import withRouter from "../utils/withRouter.js";
-import UserProfile from '../utils/UserProfile.js';
+import { useContext, useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { joinGame } from "../api";
 import Chat from "../components/Chat.js";
 import Lobby from "../components/game/Lobby.js";
@@ -9,30 +8,25 @@ import End from "../components/game/End.js";
 import UserContext from "../context/user/UserContext";
 import GameContext from "../context/game/GameContext";
 
-const Game = (props) => {
+const Game = () => {
     const [code, setCode] = useState(null);
 
-    const { user, setUser } = useContext(UserContext);
+    const { user } = useContext(UserContext);
     const { game, setGame } = useContext(GameContext);
 
-    const joueur = {
-        name: 'temp'
-    };
-
+    const params = useParams();
     // Réduire l'accès à certaines page aux joueurs connecté
     useEffect(() => {
-        setCode(props.router.params.code);
+        setCode(params.code);
     }, []);
 
     useEffect(() => {
+        
         if (!code) {
             return;
         }
-
-        joinGame(code, {
-            ...UserProfile.getPlayer(),
-            token: UserProfile.getToken()
-        }).then(response => {
+        
+        joinGame(code, user.token).then(response => {
             setGame(response.data);
         }).catch(error => {
             if (error.response)
@@ -41,7 +35,7 @@ const Game = (props) => {
                         console.error("Requete malformée, paramètre(s) manquant(s)");
                         break;
                     case 401:
-                        console.error("Le joueur "+joueur.name+" n'est pas reconnu par le serveur");
+                        console.error("Le joueur "+user.player.name+" n'est pas reconnu par le serveur");
                         break;
                     case 402:
                         console.error("Le joueur est déjà dans une partie");
@@ -88,4 +82,4 @@ const Game = (props) => {
     );
 }
 
-export default withRouter(Game);
+export default Game;

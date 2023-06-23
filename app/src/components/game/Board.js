@@ -1,102 +1,136 @@
-import React, { Component } from "react";
+import { useContext, useState, useEffect } from "react";
 import Card from "./Card.js";
-import Chat from "../Chat.js";
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import '../../style/partie.css';
 import UserProfile from '../../utils/UserProfile.js';
 import Stats from "../Stats.js"
-
-const socket = UserProfile.getSocket();
+import UserContext from "../../context/user/UserContext";
+import GameContext from "../../context/game/GameContext";
 
 function byId(a, b) {return a.id-b.id};
 
-class Game extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            status: 'PLAYING',
-            code: '',
-            player: props.router.location.state.player,
-            playable : {
-                color: null,
-                noColorCardsLeft: false
-            },
-            flick: true,
-            cards : {
+const Game = (props) => {
+
+    const [playerStats, setPlayerStats] = useState({});
+    const [isStatModalOpen, setStatModalOpen] = useState(false);
+
+    const { user } = useContext(UserContext);
+    const { game, setGame } = useContext(GameContext);
+
+    // constructor(props) {
+    //     super(props);
+    //     this.state = {
+    //         status: 'PLAYING',
+    //         code: '',
+    //         player: props.router.location.state.player,
+    //         playable : {
+    //             color: null,
+    //             noColorCardsLeft: false
+    //         },
+    //         flick: true,
+    //         cards : {
+    //             pool: [],
+    //             hand: [],
+    //             original: []
+    //         },
+    //         highest : {
+    //             id:-1,
+    //             number:-1,
+    //             color: null
+    //         },
+    //         flickSize: 5,
+    //         mustPlay: UserProfile.nametag(),
+    //         currentPlayerInformation: {},
+    //         cursedCard: "",
+    //         playerScores : []
+    //     };
+    //     this.handleClick = this.handleClick.bind(this);
+    //     this.handleFlick = this.handleFlick.bind(this);
+    //     this.handleClear = this.handleClear.bind(this);
+    // }
+
+    useEffect(() => {
+        socketFunction();
+        let flickSize, hand = [...game.hand.hand];
+        switch(game.player.length){
+            case 3: case 4 : flickSize = 5; break;
+            case 5 : flickSize = 4; break;
+            case 6: case 7: case 8: flickSize = 3; break;
+        }
+        setGame({
+            ...game,
+            cards: {
+                hand: playable(hand.sort(byId)),
                 pool: [],
-                hand: [],
-                original: []
+                original: game.hand.hand
             },
-            highest : {
-                id:-1,
-                number:-1,
-                color: null
-            },
-            flickSize: 5,
-            mustPlay: UserProfile.nametag(),
-            currentPlayerInformation: {},
-            cursedCard: "",
-            playerScores : []
-        };
-        this.handleClick = this.handleClick.bind(this);
-        this.handleFlick = this.handleFlick.bind(this);
-        this.handleClear = this.handleClear.bind(this);
+            flickSize: flickSize
+        });
+    }, []);
+
+    const handleModalStatsOpen = (id) => {
+        if(id != null) {
+            setPlayerStats(game.player[id]);
+        }
+        setStatModalOpen(!isStatModalOpen);
     }
 
-    handleModalStatsOpen = (id) => {
-        if(id != null) {
-            this.setState({currentPlayerInformation : this.state.player[id]})
-        }
-        this.setState((prevState) => {
-            return {
-                modalStatsOpen: !prevState.modalStatsOpen
-            }
-        });
-    }
-    setCursedCard = (id) => {
+    const setCursedCard = (id) => {
         switch(id) {
             case 26 :
-                this.setState({cursedCard : "pique"});
+                setGame({
+                    ...game,
+                    cursedCard: "pique"
+                });
                 break;
             case 36 :
-                this.setState({cursedCard : "coeur"});
+                setGame({
+                    ...game,
+                    cursedCard: "coeur"
+                });
                 break;
             case 46 :
-                this.setState({cursedCard : "carreau"});
+                setGame({
+                    ...game,
+                    cursedCard: "carreau"
+                });
                 break;
             case 56 :
-                this.setState({cursedCard : "trefle"});
+                setGame({
+                    ...game,
+                    cursedCard: "trefle"
+                });
                 break;
         }
     }
 
-    searchHandForColor(color) {
+    const searchHandForColor = (color) => {
         let found = false;
-        this.state.cards.hand.forEach((card, i) => {
+        game.cards.hand.forEach((card, i) => {
             found = (card.color === color || found);
         });
         return found;
     }
-    playable(cards) {
+
+    const playable = (cards) => {
         cards.forEach((card, i) => {
             cards[i] = {
                 ...card,
                 playable:
-                    (!this.state.playable.color
-                        || this.state.playable.color === card.color
-                        || !this.state.playable.noColorCardsLeft
-                        || this.state.flick
-                    ) && ((this.state.flick && this.state.cards.pool.length < this.state.flickSize)
-                        || !this.state.flick
-                    ) && (UserProfile.nametag() == this.state.mustPlay || this.state.flick)
+                    (!game.playable.color
+                        || game.playable.color === card.color
+                        || !game.playable.noColorCardsLeft
+                        || game.flick
+                    ) && ((game.flick && game.cards.pool.length < game.flickSize)
+                        || !game.flick
+                    ) && (UserProfile.nametag() == game.mustPlay || game.flick)
             }
         });
         return cards;
     }
-    handleClick = event => {
-        let id, color = this.state.playable.color,
-        noColorCardsLeft = this.state.playable.noColorCardsLeft,
-        {hand, pool} = this.state.cards;
+    const handleClick = (event) => {
+        let id, color = game.playable.color,
+        {hand, pool} = game.cards;
         if (event.target)
             id = event.target.closest(".card-container").id;
         else if (event.destination && event.destination.droppableId === "pool")
@@ -106,27 +140,28 @@ class Game extends Component {
         let cardIndex = hand.findIndex((card) => card.id == id);
         let card = hand[cardIndex];
         if (card.playable){
-            if (!this.state.flick) {
-                socket.emit('play', {gameCode: this.state.code, card: card});
+            if (!game.flick) {
+                user.socket.emit('play', {gameCode: game.code, card: card});
             }
             delete hand[cardIndex];
             if (!pool.length) color = card.color;
             pool.push(card);
-            let newHighest = this.state.highest;
+            let newHighest = game.highest;
             if (card.color === color && card.number>newHighest.number) newHighest = card;
             let playable = {
                color: null,
                noColorCardsLeft: false
             }
-            if (!this.state.flick) playable = {
+            if (!game.flick) playable = {
                 color: color,
-                noColorCardsLeft: this.searchHandForColor(color)
+                noColorCardsLeft: searchHandForColor(color)
             }
-            this.setState({
+            setGame({
+                ...game,
                 playable,
                 cards: {
-                    ...this.state.cards,
-                    hand: this.playable(hand.sort(byId)),
+                    ...game.cards,
+                    hand: playable(hand.sort(byId)),
                     pool: pool,
                 },
                 highest: newHighest
@@ -134,197 +169,168 @@ class Game extends Component {
         }
 
     }
-    handleFlick = (event) => {
-        socket.emit('flick', {gameCode: this.state.code, cards: this.state.cards.pool});
+    const handleFlick = (event) => {
+        user.socket.emit('flick', {gameCode: game.code, cards: game.cards.pool});
     }
-    handleClear = (event) => {
-        let hand = [...this.state.cards.original];
-        this.setState({
-            cards: {
-                ...this.state.cards,
-                pool: []
-            },
-        }, () => {
-            this.setState({
-                cards: {
-                    ...this.state.cards,
-                    hand: this.playable(hand.sort(byId))
-                }
-            })
-        })
-    }
-    componentDidMount() {
-        this.socketFunction();
-        let flickSize, hand = [...this.props.router.location.state.hand.hand];
-        switch(this.props.router.location.state.player.length){
-            case 3: case 4 : flickSize = 5; break;
-            case 5 : flickSize = 4; break;
-            case 6: case 7: case 8: flickSize = 3; break;
-        }
-        this.setState({
-            code: this.props.router.location.state.code,
-            cards: {
-                hand: this.playable(hand.sort(byId)),
-                pool: [],
-                original: this.props.router.location.state.hand.hand
-            },
-            highest : {
-                id:-1,
-                number:-1,
-                color: null
-            },
-            flickSize: flickSize,
-        });
+    const handleClear = (event) => {
+        let hand = [...game.cards.original];
 
+        setGame({
+            ...game,
+            cards: {
+                ...game.cards,
+                hand: playable(hand.sort(byId)),
+                pool: [],
+            }
+        });
     }
-    socketFunction = (event) => {
-        socket.on("notify", (arg)=> {
-            const newState = JSON.parse(arg);
-            if (newState.status !== 'ENDING') {
-                let color, last = newState.pool.slice(-1);
-                if (last.length) { color = newState.pool[0].color}
-                this.setState({
-                    status: newState.status,
-                    flick: !newState.flicked,
-                    mustPlay: newState.mustPlay,
+
+    const socketFunction = (event) => {
+        user.socket.on("notify", (arg)=> {
+            const newGameState = JSON.parse(arg);
+            if (newGameState.status !== 'ENDING') {
+                let color, last = newGameState.pool.slice(-1);
+                if (last.length) { color = newGameState.pool[0].color}
+                setGame({
+                    ...game,
+                    status: newGameState.status,
+                    flick: !newGameState.flicked,
+                    mustPlay: newGameState.mustPlay,
                     playable : {
                         color: color,
-                        noColorCardsLeft: this.searchHandForColor(color)
+                        noColorCardsLeft: searchHandForColor(color)
                     },
-                    player: newState.player,
-                    playerScores: newState.playerScores
-                }, () => {
-                     this.setState({
-                        cards: {
-                            ...this.state.cards,
-                            hand: this.playable(newState.hand.hand.sort(byId)),
-                            pool: newState.pool
-                        }
-                    });
+                    player: newGameState.player,
+                    playerScores: newGameState.playerScores,
+                    cards: {
+                        ...game.cards,
+                        hand: playable(newGameState.hand.hand.sort(byId)),
+                        pool: newGameState.pool
+                    }
                 });
-                this.setCursedCard(newState.IdCursedCard);
+
+
+                setCursedCard(newGameState.IdCursedCard);
             }
             else {
                 this.setState({
-                   status: newState.status,
-                   playerScores: newState.playerScores
+                   status: newGameState.status,
+                   playerScores: newGameState.playerScores
                 })
             }
         });
     }
-    getScore = (index) => {
-        let player = this.state.playerScores[index];
+    const getScore = (index) => {
+        let player = game.playerScores[index];
         if(player != null) {
             return player.score;
         }
         return 0;
     }
-    render() {
-        let navbar = document.getElementsByClassName("navbar")[0];
-        if (navbar) navbar.style.display = "none";
-        return (
-            <div>
-                <div className="opponent-wrapper">
-                {
-                    this.state.player.map((p, index) =>
-                        <div className={[(UserProfile.nametag(p) === this.state.mustPlay) ? "must-play":"", "player-wrapper"].join(' ')} >
-                            <div className="opponent" index={index}>
-                                <a key={index} onClick={() => this.handleModalStatsOpen(index)} style={{cursor: 'pointer'}} >{p.name}#{p.tag}</a>
-                            </div>
-                            <div className="opponent" index={index}>
-                                <p>Score : {this.getScore(index)}</p>
-                            </div>
-                        </div>
-                    )
-                }
-                </div>
-                <div className="table-wrapper">
-                    {
-                        (!this.state.flick) ?
-                        <div>
-                            Couleur demandée:
-                                <div className={[(this.state.playable.color) ? this.state.playable.color : "indefini", "playable"].join(' ')}>‎</div>
-                        </div>:
-                            (this.state.cards.pool.length < this.state.flickSize) ?
-                            <div className="buttonHolder">
-                                Cartes défaussées: ({this.state.cards.pool.length}/{this.state.flickSize})
-                                {
-                                    (this.state.cards.pool.length > 0) ? <button class="btn btn-danger" onClick={this.handleClear}>X</button>:""
-                                }
-                            </div>:
-                            <div className="buttonHolder">
-                                <button class="btn btn-success" onClick={this.handleFlick}>Valider la défausse</button>
-                                <button class="btn btn-danger" onClick={this.handleClear}>X</button>
-                            </div>
 
-                    }
-                    {
-                        this.state.cursedCard == '' ? "" :
-                        <div>
-                            Carte Maudite : <div className={[this.state.cursedCard, "maudite"].join(' ')}>7</div>
+    let navbar = document.getElementsByClassName("navbar")[0];
+    if (navbar) navbar.style.display = "none";
+    return (
+        <div>
+            <div className="opponent-wrapper">
+            {
+                game.player.map((p, index) =>
+                    <div className={[(UserProfile.nametag(p) === game.mustPlay) ? "must-play":"", "player-wrapper"].join(' ')} >
+                        <div className="opponent" index={index}>
+                            <a key={index} onClick={() => this.handleModalStatsOpen(index)} style={{cursor: 'pointer'}} >{p.name}#{p.tag}</a>
                         </div>
-                    }
-                </div>
-                <DragDropContext onDragEnd={this.handleClick}>
-                    <Droppable droppableId="pool" key="pool" direction="horizontal">
-                    {(provided, snapshot) =>
-                        <div
-                            className="pool-wrapper"
-                            ref={provided.innerRef}
-                            style={{
-                                background: snapshot.isDraggingOver
-                                ? "rgba(10,10,10,.3)"
-                                : ""
-                            }}
-                        >
-                        {
-                            this.state.cards.pool.map((card) =>
-                                <Card
-                                    index={card.id}
-                                    key={card.id}
-                                    card={card}
-                                    playable={false}
-                                    context={"pool"}
-                                    highest={this.state.highest.id == card.id}
-                                />
-                            )
-                        }
-                        {provided.placeholder}
+                        <div className="opponent" index={index}>
+                            <p>Score : {this.getScore(index)}</p>
                         </div>
-                    }
-                    </Droppable>
-                    <Droppable droppableId="hand" key="hand" direction="horizontal">
-                    {(provided, snapshot) =>
-                        <div
-                            className="hand-wrapper"
-                            ref={provided.innerRef}
-                        >
-                        {
-                            this.state.cards.hand.map((card) =>
-                                <Card
-                                    index={card.id}
-                                    key={card.id}
-                                    card={card}
-                                    playable={card.playable}
-                                    context={"hand"}
-                                    handleClick={this.handleClick}
-                                />
-                            )
-                        }
-                        {provided.placeholder}
-                        </div>
-                    }
-                    </Droppable>
-                </DragDropContext>
-                <Stats
-                    modalOpen={this.state.modalStatsOpen}
-                    handleModalOpen={this.handleModalStatsOpen}
-                    player={this.state.currentPlayerInformation}
-                />
-                <Chat code={this.props.router.location.state.code}/>
+                    </div>
+                )
+            }
             </div>
-        );
-    }
+            <div className="table-wrapper">
+                {
+                    (!game.flick) ?
+                    <div>
+                        Couleur demandée:
+                            <div className={[(game.playable.color) ? game.playable.color : "indefini", "playable"].join(' ')}>‎</div>
+                    </div>:
+                        (game.cards.pool.length < game.flickSize) ?
+                        <div className="buttonHolder">
+                            Cartes défaussées: ({game.cards.pool.length}/{game.flickSize})
+                            {
+                                (game.cards.pool.length > 0) ? <button class="btn btn-danger" onClick={handleClear}>X</button>:""
+                            }
+                        </div>:
+                        <div className="buttonHolder">
+                            <button class="btn btn-success" onClick={handleFlick}>Valider la défausse</button>
+                            <button class="btn btn-danger" onClick={handleClear}>X</button>
+                        </div>
+
+                }
+                {
+                    game.cursedCard == '' ? "" :
+                    <div>
+                        Carte Maudite : <div className={[game.cursedCard, "maudite"].join(' ')}>7</div>
+                    </div>
+                }
+            </div>
+            <DragDropContext onDragEnd={handleClick}>
+                <Droppable droppableId="pool" key="pool" direction="horizontal">
+                {(provided, snapshot) =>
+                    <div
+                        className="pool-wrapper"
+                        ref={provided.innerRef}
+                        style={{
+                            background: snapshot.isDraggingOver
+                            ? "rgba(10,10,10,.3)"
+                            : ""
+                        }}
+                    >
+                    {
+                        game.cards.pool.map((card) =>
+                            <Card
+                                index={card.id}
+                                key={card.id}
+                                card={card}
+                                playable={false}
+                                context={"pool"}
+                                highest={game.highest.id == card.id}
+                            />
+                        )
+                    }
+                    {provided.placeholder}
+                    </div>
+                }
+                </Droppable>
+                <Droppable droppableId="hand" key="hand" direction="horizontal">
+                {(provided, snapshot) =>
+                    <div
+                        className="hand-wrapper"
+                        ref={provided.innerRef}
+                    >
+                    {
+                        game.cards.hand.map((card) =>
+                            <Card
+                                index={card.id}
+                                key={card.id}
+                                card={card}
+                                playable={card.playable}
+                                context={"hand"}
+                                handleClick={handleClick}
+                            />
+                        )
+                    }
+                    {provided.placeholder}
+                    </div>
+                }
+                </Droppable>
+            </DragDropContext>
+            <Stats
+                isModalOpen={isStatModalOpen}
+                toggleModal={handleModalStatsOpen}
+                player={playerStats}
+            />
+        </div>
+    );
 }
 
 export default Game;

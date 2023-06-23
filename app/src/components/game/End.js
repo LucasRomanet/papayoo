@@ -29,7 +29,6 @@ class End extends Component {
                         </div>
                     )
                 }
-                <Chat code={this.state.code}/>
             </div>
         );
     }

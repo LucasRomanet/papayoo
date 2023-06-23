@@ -7,19 +7,14 @@ const { PLAYER_DOESNT_EXIST, PLAYER_IN_GAME, PLAYER_NOT_ONLINE,
 const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError");
 const { isCorrectName, isCorrectTag } = require("../model/helpers/playerHelper");
 const router = express.Router();
+const { loggedUserMiddleware } = require('./loggedUserMiddleware');
 
 const { currentGame, currentPlayer,playerToSocket, Game, makeJoinCode, nametag, isInGame, isInGameWithExclusion, gameToJson, gameStatus } = require("../utils/game.js");
 const { notify } = require('../utils/socket.js');
 
 
-router.post('/', (req, res) => {
-    /* json format awaited:
-    {
-        name: string,
-        tag: string,
-        token : string
-    }
-    returns:
+router.post('/', loggedUserMiddleware, (req, res) => {
+    /* turns:
     {
         maxplayer: int,
         code: string,
@@ -28,8 +23,8 @@ router.post('/', (req, res) => {
     }
     */
     try {
-        const { name, tag, token } = req.body;
-        if (!canCreateGame(name, tag, token)) {
+        const { name, tag } = req.user;
+        if (!canCreateGame(name, tag)) {
             return res.status(400).send();
         }
 
@@ -50,18 +45,12 @@ router.post('/', (req, res) => {
     }
 });
 
-router.post('/:gameCode', (req, res) => {
-    /* json format awaited:
-    {
-        name: string,
-        tag: string,
-        token: string
-    }
-    */
+router.post('/:gameCode', loggedUserMiddleware, (req, res) => {
     try {
         const { gameCode } = req.params;
-        const { name, tag, token } = req.body;
-        if (!canJoinGame(name, tag, token, gameCode)) {
+        const { name, tag } = req.user;
+
+        if (!canJoinGame(name, tag, gameCode)) {
             return res.status(400).send();
         }
 
@@ -81,10 +70,9 @@ router.post('/:gameCode', (req, res) => {
     }
 });
 
-function canCreateGame(name, tag, token) {
+function canCreateGame(name, tag) {
     if (!isCorrectName(name)) return false;
     if (!isCorrectTag(tag)) return false;
-    if (!token) return false;
 
     const playerNameTag = nametag({ name, tag });
 
@@ -100,17 +88,12 @@ function canCreateGame(name, tag, token) {
         throw new PapayooError(PLAYER_NOT_ONLINE);
     }
 
-    if (token !== playerToSocket.get(playerNameTag).token) {
-        throw new PapayooError(INCORRECT_TOKEN);
-    }
-
     return true;
 }
 
-function canJoinGame(name, tag, token, gameCode) {
+function canJoinGame(name, tag, gameCode) {
     if (!isCorrectName(name)) return false;
     if (!isCorrectTag(tag)) return false;
-    if (!token) return false;
     if (!gameCode) return false;
 
     if (!currentGame.has(gameCode)) {
@@ -120,10 +103,6 @@ function canJoinGame(name, tag, token, gameCode) {
     const playerNameTag = nametag({ name, tag });
     if (!currentPlayer.has(playerNameTag)) {
         throw new PapayooError(PLAYER_DOESNT_EXIST);
-    }
-
-    if (token !== playerToSocket.get(playerNameTag).token) {
-        throw new PapayooError(INCORRECT_TOKEN);
     }
 
     const game = currentGame.get(gameCode);
