@@ -5,7 +5,7 @@ const { MIN_NAME_LENGTH, MAX_NAME_LENGTH } = require("../utils/const");
 const Schema = mongoose.Schema;
 
 // this will be our data base's data structure
-const PlayerSchema = new Schema(
+const UserSchema = new Schema(
     {
         name:  {
                 type: String,
@@ -27,14 +27,14 @@ const PlayerSchema = new Schema(
     { timestamps: true }
 );
 
-PlayerSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function(next) {
         this.password = await bcrypt.hash(this.password, 10);
         next();
 });
 
-PlayerSchema.pre('updateOne', updateFunction);
+UserSchema.pre('updateOne', updateFunction);
 
-PlayerSchema.pre('updateMany', updateFunction);
+UserSchema.pre('updateMany', updateFunction);
 
 async function updateFunction(next) {
         const modifications = this.getUpdate();
@@ -45,4 +45,4 @@ async function updateFunction(next) {
 }
 
 // export the new Schema so we could modify it using Node.js
-module.exports = mongoose.model("Player", PlayerSchema);
+module.exports = mongoose.model("User", UserSchema);

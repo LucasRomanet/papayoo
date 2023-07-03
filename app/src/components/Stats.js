@@ -2,14 +2,15 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Modal from 'react-bootstrap/Modal';
 
 const Stats = (props) => {
-    let player = {
+    let user = {
         name: "Guest",
         tag: "0000",
-        games: 0,
+        gamesPlayed: 0,
         score: 0
-    }
-    if (props.player) player = props.player;
-    const { name, tag, games, score } = player;
+    };
+    if (props.user) user = props.user;
+    const { name, tag, gamesPlayed, score } = user;
+
     return (
         <Modal show={props.isModalOpen} onHide={props.toggleModal}>
             <Modal.Header closeButton>
@@ -20,7 +21,7 @@ const Stats = (props) => {
                 <br />
                 Tag : {tag}
                 <br />
-                Nombre de parties jouées : {games}
+                Nombre de parties jouées : {gamesPlayed}
                 <br />
                 Score cumulé : {score}
             </Modal.Body>

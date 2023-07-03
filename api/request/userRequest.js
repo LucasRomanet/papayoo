@@ -3,9 +3,9 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const { getAllPlayers, isPlayerExist, getOnePlayer, createPlayer, updateOnePlayer, deleteOnePlayer, getNewTag, isCorrectName, isCorrectTag, isCorrectPassword } = require("../model/helpers/playerHelper");
+const { getAllUsers, isUserExist, getOneUser, createUser, isCorrectName, isCorrectTag, isCorrectPassword } = require("../model/helpers/userHelper");
 
-const { currentPlayer, playerToSocket,makeJoinCode, Player, nametag, isInGame } = require("../utils/game.js");
+const { currentUser, userToSocket, User, nametag } = require("../utils/game.js");
 
 const { PLAYER_DOESNT_EXIST, PLAYER_IS_IN_GAME } = require("../utils/errors/messagesConsts");
 const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError");
@@ -14,8 +14,8 @@ const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError"
 // this method fetches all available data in our database
 router.get('/', async (req, res) => {
     try {
-        const players = await getAllPlayers();
-        return res.json(players);
+        const users = await getAllUsers();
+        return res.json(users);
     } catch (e) {
         return res.status(500).json( { message: getErrorMessage('Erreur lors de la récupération des joueurs', e) } )
     }
@@ -26,24 +26,22 @@ router.get('/', async (req, res) => {
 router.post('/register', async (req, res) => {
     try {
         const { name, tag, password } = req.body;
-        if (!canCreatePlayer(name, tag, password)) {
+        if (!canCreateUser(name, tag, password)) {
             return res.status(400).send();
         }
 
-        if (await isPlayerExist({ name, tag })) {
+        if (await isUserExist({ name, tag })) {
             throw new PapayooError('Couple nom/tag indisponible.')
         }
 
-        //const tag = await getNewTag(name);
-        const createdPlayer = await createPlayer({ name, tag, password });
+        const createdUser = await createUser({ name, tag, password }, { '_id': 0, '__v': 0, 'password': 0 });
 
-        const createdPlayerNametag = nametag(createdPlayer);
+        const createdUserNametag = nametag(createdUser);
 
-        currentPlayer.set(createdPlayerNametag, new Player(createdPlayer.name, createdPlayer.tag, createdPlayer.games, createdPlayer.score))
+        currentUser.set(createdUserNametag, new User(createdUser.name, createdUser.tag, createdUser.games, createdUser.score))
 
-        return res.json(logPlayer(createdPlayer));
+        return res.json(logUser(createdUser));
     } catch (e) {
-        console.log(e);
         return res.status(500).json( { message: getErrorMessage('Erreur lors de la création du joueur', e) } )
     }
 });
@@ -62,26 +60,25 @@ router.post('/login',async (req, res) => {
         if (!canLogin(name, tag, password)) {
             return res.status(400).send();
         }
+        const userNameTag = nametag({ name, tag });
+        const user = await getOneUser({ name, tag }, { '_id': 0, '__v': 0 });
 
-        const playerNameTag = nametag({ name, tag });
-
-        if (!currentPlayer.has(playerNameTag)) {
+        if (!user) {
             throw new PapayooError(PLAYER_DOESNT_EXIST);
         }
 
-        if (playerToSocket.has(playerNameTag)) {
-            playerToSocket.delete(playerNameTag);
+        if (userToSocket.has(userNameTag)) {
+            userToSocket.delete(userNameTag);
         }
+        
+        currentUser.set(userNameTag, new User(user.name, user.tag, user.games, user.score));
 
-        const player = await getOnePlayer({ name, tag }, {});
-
-        const correctPassword = await bcrypt.compare(password, player.password);
+        const correctPassword = await bcrypt.compare(password, user.password);
         if (!correctPassword) {
             throw new PapayooError('Mot de passe incorrect');
         }
-
-        // Return the logged player
-        return res.json(logPlayer(player));
+        // Return the logged user
+        return res.json(logUser(user));
     } catch (e) {
         return res.status(500).send( { message: getErrorMessage('Erreur lors de la connexion du joueur', e) } )
     }
@@ -98,29 +95,29 @@ function createToken(name, tag) {
     );
 }
 
-function logPlayer(player) {
-    const token = createToken(player.name, player.tag);
+function logUser(user) {
+    const token = createToken(user.name, user.tag);
 
-    const playerNameTag = nametag({ name: player.name, tag: player.tag });
-    playerToSocket.set(playerNameTag, { token });
+    const userNameTag = nametag({ name: user.name, tag: user.tag });
+    userToSocket.set(userNameTag, { token });
 
     return {
         token, 
-        name: player.name,
-        tag: player.tag, 
-        games: player.games, 
-        score: player.score
+        name: user.name,
+        tag: user.tag, 
+        games: user.games, 
+        score: user.score
     };
 }
 
-function canCreatePlayer(name, tag, password) {
+function canCreateUser(name, tag, password) {
     if (!isCorrectName(name)) return false;
     if (!isCorrectTag(tag)) return false;
     if (!isCorrectPassword(password)) return false;
     return true;
 }
 
-function canUpdatePlayer(name, tag, update) {
+function canUpdateUser(name, tag, update) {
     if (!isCorrectName(name)) return false;
     if (!isCorrectTag(tag)) return false;
     if ((!update.password && !update.name) || update.tag != null || update._id != null || update.games != null) return false;
@@ -134,7 +131,7 @@ function canLogin(name, tag, password) {
     return true;
 }
 
-function canUpdatePlayer(name, tag, password, update) {
+function canUpdateUser(name, tag, password, update) {
     if (!isCorrectName(name)) return false;
     if (!isCorrectTag(tag)) return false;
     if (!isCorrectPassword(password)) return false;

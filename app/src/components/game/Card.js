@@ -1,9 +1,9 @@
 import { Draggable } from 'react-beautiful-dnd';
 
-function Card({index, card, playable, context, highest, handleClick}) {
+function Card({index, card, playable, context, isHighest, handleClick}) {
     let overlay =
         "card-overlay"+
-        (highest ? " highest" : '');
+        (isHighest ? " highest" : '');
     return (
         <Draggable index={index} draggableId={index.toString()}>
             {(provided, snapshot) =>
@@ -16,7 +16,7 @@ function Card({index, card, playable, context, highest, handleClick}) {
                             marginLeft: (context==="hand")
                                 ? "-35px"
                                 : "-20px",
-                            ...(playable || context==="pool" ? provided.draggableProps.style: null : '')
+                            ...((playable || context==="pool") ? provided.draggableProps.style = null : '')
                             }
                         }
                     id={card.id}

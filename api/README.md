@@ -10,17 +10,17 @@ Lance l'API accessible via [http://localhost:3001/api](http://localhost:3001/api
 
 ## GET
 
-#### `/player`
+#### `/user`
 
 Renvoie une liste de tout les joueurs et leurs statistiques.
 
-#### `/player/:nom/:tag`
+#### `/user/:nom/:tag`
 
 Renvoie les statistiques du joueur name#tag.
 
 ## POST
 
-#### `/player/add`
+#### `/user/add`
 
 ```js
 /* format json attendu:
@@ -33,7 +33,7 @@ Renvoie les statistiques du joueur name#tag.
 
 Ajoute un joueur à la base de données accompagné de son mot de passe crypté et de son tag géneré automatiquement.
 
-#### `/player/update`
+#### `/user/update`
 
 ```js
 /* format json attendu:
@@ -52,7 +52,7 @@ Ajoute un joueur à la base de données accompagné de son mot de passe crypté 
 
 Modifie les attributs d'un joueur.
 
-#### `/player/login`
+#### `/user/login`
 
 ```js
 /* format json attendu:
@@ -96,7 +96,7 @@ Rejoint un salon multijoueur à l'aide d'un code à 6 caractères.
 
 ## DELETE
 
-#### `/player/add`
+#### `/user/add`
 
 ```js
 /* format json attendu:
@@ -126,7 +126,7 @@ Supprime un joueur de la base de données.
 */
 ```
 
-2e étape de la connexion du joueur avec le token obtenu par la méthode l'appel de `/api/player/login`.
+2e étape de la connexion du joueur avec le token obtenu par la méthode l'appel de `/api/user/login`.
 
 #### `start`
 

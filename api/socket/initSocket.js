@@ -1,8 +1,9 @@
 const sock = require('socket.io');
 const bcrypt = require('bcrypt');
-const {playerToSocket, socketToPlayer, nametag, currentPlayer, currentGame, currentGamesHands, gameStatus} = require("../utils/game.js");
+const { userToSocket, nametag, currentUser, currentGame } = require("../utils/game.js");
 const {loadGameSocket} = require("./gameSocket");
-const { notify, setNextPlayer} = require('../utils/socket.js');
+const { notify } = require('../utils/socket.js');
+const jwt = require('jsonwebtoken');
 
 let io = null;
 
@@ -20,47 +21,70 @@ function initSocket(server){
         socket.on('login', async (data)=>{
             /* format awaited:
             {
-                name: string,
-                tag: string,
                 token: string
             }
             */
-            if(currentPlayer.has(nametag(data))){
-                if(playerToSocket.has(nametag(data))){
-                    if(playerToSocket.get(nametag(data)).token != null){
-                        let match = await bcrypt.compare(playerToSocket.get(nametag(data)).token, data.token);
-                        if(match){
-                            playerToSocket.delete(nametag(data));
-                            playerToSocket.set(nametag(data), {socket : socket, token : data.token, player : currentPlayer.get(nametag(data))});
-                            socketToPlayer.set(socket, {token : data.token, player : currentPlayer.get(nametag(data))});
-                            loadGameSocket(socket);
-                        }
-                    }
-                }
+            let decoded; // { name, tag }
+            try {
+                decoded = jwt.verify(
+                    data.token,
+                    process.env.JWT_SECRET,
+                    { algorithm: process.env.JWT_ALGORITHM }
+                );
+            } catch (err) {
+                console.error(err);
+                return;
             }
+
+            const userNameTag = nametag(decoded);
+            if(!currentUser.has(userNameTag) || !userToSocket.has(userNameTag) || userToSocket.get(userNameTag).token !== data.token){
+                return;
+            }
+            const user = currentUser.get(userNameTag);
+
+            userToSocket.delete(userNameTag);
+            userToSocket.set(userNameTag, {socket: socket, token: data.token, user});
+            socket.token = data.token;
+            socket.user = user;
+            loadGameSocket(socket);
         });
 
         socket.on('disconnect', () => {
             /* format awaited: null */
-            if(socketToPlayer.has(socket)){
-                let player = currentPlayer.get(nametag(socketToPlayer.get(socket).player));
-                let code = player.playingGame;
-                if(code != ""){
-                    currentPlayer.get(nametag(player)).playingGame = "";
-                    socketToPlayer.delete(socket);
-                    playerToSocket.delete(nametag(player));
-                    if(currentGame.has(code) && currentGame.get(code).player.has(nametag(player))){
-                        currentGame.get(code).player.delete(nametag(player));
-                        if(currentGamesHands.has(code)){
-                            currentGamesHands.get(code).delete(nametag(player));
-                            if(currentGame.get(code).mustPlay == nametag(player)){
-                                setNextPlayer(currentGame.get(code), nametag(player));
-                            }
-                        }
-                        notify(code);
-                    }
+            if (!socket.token || socket.user == null) {
+                return;
+            }
+            
+            const user = socket.user;
+            const userNameTag = nametag(user);
+            
+            const gameCode = user.playingGame;
+            user.playingGame = "";
+            userToSocket.delete(userNameTag);
+
+            delete socket.token;
+            delete socket.user;
+
+            // Remove player from the game
+            if (gameCode == null) {
+                return;
+            }
+            const game = currentGame.get(gameCode);
+            if(game == null) {
+                return;
+            }
+
+            if (game.removePlayer(userNameTag)) {
+                if (game.mustPlay == userNameTag) {
+                    game.setNextPlayer();
                 }
             }
+
+            if(game.players.size === 0) {
+                currentGame.delete(gameCode);
+            }
+            
+            notify(gameCode);
         });
     });
 }

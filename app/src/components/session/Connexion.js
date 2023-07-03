@@ -4,7 +4,7 @@ import UserContext from "../../context/user/UserContext";
 import UserForm from './UserForm';
 import Modal from 'react-bootstrap/Modal';
 
-import { getPlayer, login } from "../../api";
+import { login } from "../../api";
 
 const Connexion = (props) => {
     
@@ -43,37 +43,14 @@ const Connexion = (props) => {
             if (loginResponse.status !== 200) {
                 return;
             }
-            const { name, tag, games, score, token } = loginResponse.data;
+            const { name, tag, token } = loginResponse.data;
 
-            const loggedUser = {...user};
-            loggedUser.token = token;
-            loggedUser.player = { name, tag, games, score };
-            
+            const loggedUser = {...user, ...loginResponse.data};
             setUser(loggedUser);
 
-            props.notify();
-            socket.emit('login', loggedUser);
-            navigate('/jouer');
+            socket.emit('login', { name, tag, token });
             
-            /*
-            getPlayer(name, tag).then(statResponse => {
-                const loggedUser = {
-                    socket: user.socket,
-                    player: {
-                        name: name,
-                        tag: tag,
-                        games: statResponse.data[0].games,
-                        score: statResponse.data[0].score
-                    },
-                    token: loginResponse.data
-                }
-                setUser(loggedUser);
-                props.notify();
-                socket.emit('login', loggedUser);
-                navigate('/jouer');
-            }).catch(error => {
-                if (error.statResponse) console.error(error.message);
-            }); */
+            navigate('/jouer');
         }).catch(error => {
             if (error.loginResponse) console.error(error.message);
         });

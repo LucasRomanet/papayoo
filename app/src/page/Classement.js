@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import "../style/classement.css";
 import Loading from "../components/error/Loading"
 import UserProfile from '../utils/UserProfile';
-import {getAllPlayers} from "../api";
+import {getAllUsers} from "../api";
 
 function byGames(a, b) {return a.games-b.games};
 function byScore(a, b) {return a.score-b.score};
@@ -31,7 +31,7 @@ class Classement extends Component{
         })
     }
     componentDidMount(){
-        getAllPlayers().then(response => {
+        getAllUsers().then(response => {
             let everyone = response.data.sort(byGames);
             let indexOfFirstPlayer = everyone.findIndex(byNoGames);
             let playedOnce = everyone.slice(indexOfFirstPlayer);

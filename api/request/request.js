@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 const game =  require("./gameRequest.js");
-const playerRequest =  require("./playerRequest.js");
+const userRequest =  require("./userRequest.js");
 
 router.use("/game", game);
-router.use("/player", playerRequest);
+router.use("/user", userRequest);
 
 
 module.exports = router;

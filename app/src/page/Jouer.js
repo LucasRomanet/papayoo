@@ -9,7 +9,6 @@ const Jouer = () => {
     const [code, setCode] = useState(null);
 
     const { user } = useContext(UserContext);
-    console.log(user);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -32,7 +31,7 @@ const Jouer = () => {
     const handleCreate = (event) => {
         createGame(user.token)
         .then(response => {
-            handleSubmit(response.data.code);
+            handleSubmit(response.data);
         }).catch(error => {
             if (error.response)
                 console.error(error.response.status) 

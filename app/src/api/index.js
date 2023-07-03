@@ -1,22 +1,18 @@
 import axios from "axios";
 import Domain from "../utils/Domain";
 
-export const register = (player) => {
-    return axios.post(Domain.getAPI() + '/player/register', player);
+export const register = (user) => {
+    return axios.post(Domain.getAPI() + '/user/register', user);
 }
 
-export const login = (player) => {
-    return axios.post(Domain.getAPI() + '/player/login', player);
+export const login = (user) => {
+    return axios.post(Domain.getAPI() + '/user/login', user);
 }
 
-export const getAllPlayers = () => {
-    console.log(Domain.getAPI()+'/player/');
-    return axios.get(Domain.getAPI()+'/player/');
+export const getAllUsers = () => {
+    return axios.get(Domain.getAPI()+'/user/');
 }
 
-export const getPlayer = (name, tag) => {
-    return axios.get(Domain.getAPI() + '/player/' + name + '/' + tag);
-}
 
 export const createGame = (token) => {
     return axios.post(Domain.getAPI() + '/game/', null, {

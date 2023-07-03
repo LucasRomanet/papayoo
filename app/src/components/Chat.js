@@ -1,34 +1,36 @@
 import { useState, useContext, useEffect } from "react";
-import ChatContext from "../context/chat/ChatContext";
 import UserContext from "../context/user/UserContext";
+import GameContext from "../context/game/GameContext";
 import "../style/chat.css";
 
-
-
-const Chat = (props) => {
+const Chat = () => {
     const [chatInput, setChatInput] = useState('');
 
-    const { chat, setChat } = useContext(ChatContext);
+    const [chat, setChat] = useState([]);
     const { user } = useContext(UserContext);
+    const { game } = useContext(GameContext);
 
     useEffect(() => {
-        socketFunction();
+        function onMessageReceived(receivedMessage) {
+            const newMessage = JSON.parse(receivedMessage);
+            setChat((chatState) => [...chatState, newMessage]);
+        }
+
+        user.socket.on('message', onMessageReceived);
+        
+        return () => {
+            user.socket.off('message', onMessageReceived);
+        };
     }, []);
 
     const handleMessage = (event) => {
-        if (chatInput) user.socket.emit('message', {gameCode: props.code, text: chatInput});
+        if (chatInput) user.socket.emit('message', {gameCode: game.mutual.code, text: chatInput});
         setChatInput('');
     }
     const enterFunction = (event) => {
         if (event.charCode === 13) {
             handleMessage();
         }
-    }
-    const socketFunction = (event) => {
-        user.socket.on("message", (arg)=> {
-            const newMessage = JSON.parse(arg);
-            setChat([...chat, newMessage]);
-         });
     }
 
     return (
@@ -39,7 +41,7 @@ const Chat = (props) => {
             <div className="chat-content">
             {
                 chat.map((message, index) =>
-                    <div key={index} className="chat-post"><div>{message.player}</div><div>{message.text}</div></div>
+                    <div key={index} className="chat-post"><div>{message.userNameTag}</div><div>{message.text}</div></div>
                 )
             }
                 <div className="chat-input">

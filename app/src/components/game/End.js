@@ -1,7 +1,6 @@
 import React, { Component } from "react";
-import Chat from "../Chat.js";
 
-function byScore(a, b) {return a.score-b.score};
+function byScore(a, b) {return a.points - b.points};
 
 class End extends Component {
     constructor(props) {
@@ -25,7 +24,7 @@ class End extends Component {
                 {
                     this.state.playerScores.map((joueur, index) =>
                         <div>
-                            <h3>{index+1}</h3><h4>{joueur.player}: {joueur.score} points</h4>
+                            <h3>{index+1}</h3><h4>{joueur.player}: {joueur.points} points</h4>
                         </div>
                     )
                 }

@@ -5,72 +5,47 @@ import '../../style/partie.css';
 import UserProfile from '../../utils/UserProfile.js';
 import Stats from "../Stats.js"
 import UserContext from "../../context/user/UserContext";
-import GameContext from "../../context/game/GameContext";
+import GameContext from "../../context/game/GameContext.js";
 
 function byId(a, b) {return a.id-b.id};
 
-const Game = (props) => {
+const Game = () => {
 
-    const [playerStats, setPlayerStats] = useState({});
+    const [userStats, setUserStats] = useState({});
     const [isStatModalOpen, setStatModalOpen] = useState(false);
+    const [playableCard, setPlayableCard] = useState({
+        color: null,
+        noColorCardsLeft: false
+    });
+    const [highest, setHighest] = useState({
+        id:-1,
+        number:-1,
+        color: null
+    });
 
     const { user } = useContext(UserContext);
     const { game, setGame } = useContext(GameContext);
 
-    // constructor(props) {
-    //     super(props);
-    //     this.state = {
-    //         status: 'PLAYING',
-    //         code: '',
-    //         player: props.router.location.state.player,
-    //         playable : {
-    //             color: null,
-    //             noColorCardsLeft: false
-    //         },
-    //         flick: true,
-    //         cards : {
-    //             pool: [],
-    //             hand: [],
-    //             original: []
-    //         },
-    //         highest : {
-    //             id:-1,
-    //             number:-1,
-    //             color: null
-    //         },
-    //         flickSize: 5,
-    //         mustPlay: UserProfile.nametag(),
-    //         currentPlayerInformation: {},
-    //         cursedCard: "",
-    //         playerScores : []
-    //     };
-    //     this.handleClick = this.handleClick.bind(this);
-    //     this.handleFlick = this.handleFlick.bind(this);
-    //     this.handleClear = this.handleClear.bind(this);
-    // }
-
     useEffect(() => {
-        socketFunction();
-        let flickSize, hand = [...game.hand.hand];
-        switch(game.player.length){
-            case 3: case 4 : flickSize = 5; break;
-            case 5 : flickSize = 4; break;
-            case 6: case 7: case 8: flickSize = 3; break;
+        if (game.mutual.status !== 'ENDING') {
+            let color, last = game.mutual.pool.slice(-1);
+            if (last.length) { color = game.mutual.pool[0].color }
+
+            setPlayableCard({
+                color: color,
+                noColorCardsLeft: searchHandForColor(color)
+            });
+
+            setCursedCard(game.mutual.cursedCardId);
         }
-        setGame({
-            ...game,
-            cards: {
-                hand: playable(hand.sort(byId)),
-                pool: [],
-                original: game.hand.hand
-            },
-            flickSize: flickSize
-        });
-    }, []);
+        console.log(game);
+    }, [game]);
+
+    
 
     const handleModalStatsOpen = (id) => {
         if(id != null) {
-            setPlayerStats(game.player[id]);
+            setUserStats(game.mutual.players[id].user);
         }
         setStatModalOpen(!isStatModalOpen);
     }
@@ -106,124 +81,67 @@ const Game = (props) => {
 
     const searchHandForColor = (color) => {
         let found = false;
-        game.cards.hand.forEach((card, i) => {
+        game.individual.hand.forEach((card, _) => {
             found = (card.color === color || found);
         });
         return found;
     }
 
-    const playable = (cards) => {
-        cards.forEach((card, i) => {
-            cards[i] = {
-                ...card,
-                playable:
-                    (!game.playable.color
-                        || game.playable.color === card.color
-                        || !game.playable.noColorCardsLeft
-                        || game.flick
-                    ) && ((game.flick && game.cards.pool.length < game.flickSize)
-                        || !game.flick
-                    ) && (UserProfile.nametag() == game.mustPlay || game.flick)
-            }
-        });
-        return cards;
+    const isPlayable = (card) => {
+        if (game.mutual.flicked) {
+            return game.mutual.pool.length < game.mutual.flickSize;
+        }
+
+        const isPlayerTurn = UserProfile.nametag(user) == game.mutual.mustPlay;
+        const isRequiredColor = playableCard.color === card.color || playableCard.noColorCardsLeft;
+
+        return isPlayerTurn && isRequiredColor;
     }
+
     const handleClick = (event) => {
-        let id, color = game.playable.color,
-        {hand, pool} = game.cards;
+        let id, color = playableCard.color;
         if (event.target)
             id = event.target.closest(".card-container").id;
         else if (event.destination && event.destination.droppableId === "pool")
             id = event.draggableId;
         else return;
 
-        let cardIndex = hand.findIndex((card) => card.id == id);
-        let card = hand[cardIndex];
-        if (card.playable){
-            if (!game.flick) {
-                user.socket.emit('play', {gameCode: game.code, card: card});
+
+        const cardIndex = game.individual.hand.findIndex((card) => card.id == id);
+        const card = game.individual.hand[cardIndex];
+        if (isPlayable(card)){
+            if (!game.mutual.flicked) {
+                user.socket.emit('play', {gameCode: game.mutual.code, card: card});
             }
-            delete hand[cardIndex];
-            if (!pool.length) color = card.color;
-            pool.push(card);
-            let newHighest = game.highest;
-            if (card.color === color && card.number>newHighest.number) newHighest = card;
+            delete game.individual.hand[cardIndex];
+            if (!game.mutual.pool.length) color = card.color;
+            game.mutual.pool.push(card);
+            if (card.color === color && card.number > highest.number) setHighest(card);
             let playable = {
                color: null,
                noColorCardsLeft: false
             }
-            if (!game.flick) playable = {
+            if (!game.mutual.flicked) playable = {
                 color: color,
                 noColorCardsLeft: searchHandForColor(color)
             }
-            setGame({
-                ...game,
-                playable,
-                cards: {
-                    ...game.cards,
-                    hand: playable(hand.sort(byId)),
-                    pool: pool,
-                },
-                highest: newHighest
-            });
+            setPlayableCard(playable);
         }
 
     }
+
     const handleFlick = (event) => {
-        user.socket.emit('flick', {gameCode: game.code, cards: game.cards.pool});
+        user.socket.emit('flick', {gameCode: game.mutual.code, cards: game.mutual.pool});
     }
     const handleClear = (event) => {
-        let hand = [...game.cards.original];
-
-        setGame({
-            ...game,
-            cards: {
-                ...game.cards,
-                hand: playable(hand.sort(byId)),
-                pool: [],
-            }
-        });
+        game.individual.hand = [...game.individual.hand, ...game.mutual.pool]
+        setGame(game);
     }
 
-    const socketFunction = (event) => {
-        user.socket.on("notify", (arg)=> {
-            const newGameState = JSON.parse(arg);
-            if (newGameState.status !== 'ENDING') {
-                let color, last = newGameState.pool.slice(-1);
-                if (last.length) { color = newGameState.pool[0].color}
-                setGame({
-                    ...game,
-                    status: newGameState.status,
-                    flick: !newGameState.flicked,
-                    mustPlay: newGameState.mustPlay,
-                    playable : {
-                        color: color,
-                        noColorCardsLeft: searchHandForColor(color)
-                    },
-                    player: newGameState.player,
-                    playerScores: newGameState.playerScores,
-                    cards: {
-                        ...game.cards,
-                        hand: playable(newGameState.hand.hand.sort(byId)),
-                        pool: newGameState.pool
-                    }
-                });
-
-
-                setCursedCard(newGameState.IdCursedCard);
-            }
-            else {
-                this.setState({
-                   status: newGameState.status,
-                   playerScores: newGameState.playerScores
-                })
-            }
-        });
-    }
-    const getScore = (index) => {
-        let player = game.playerScores[index];
+    const getPoints = (index) => {
+        let player = game.mutual.players[index];
         if(player != null) {
-            return player.score;
+            return player.points;
         }
         return 0;
     }
@@ -234,13 +152,13 @@ const Game = (props) => {
         <div>
             <div className="opponent-wrapper">
             {
-                game.player.map((p, index) =>
-                    <div className={[(UserProfile.nametag(p) === game.mustPlay) ? "must-play":"", "player-wrapper"].join(' ')} >
+                game.mutual.players.map((player, index) =>
+                    <div className={[(UserProfile.nametag(player.user) === game.mutual.mustPlay) ? "must-play":"", "player-wrapper"].join(' ')} >
                         <div className="opponent" index={index}>
-                            <a key={index} onClick={() => this.handleModalStatsOpen(index)} style={{cursor: 'pointer'}} >{p.name}#{p.tag}</a>
+                            <a key={index} onClick={() => handleModalStatsOpen(index)} style={{cursor: 'pointer'}} >{player.user.name}#{player.user.tag}</a>
                         </div>
                         <div className="opponent" index={index}>
-                            <p>Score : {this.getScore(index)}</p>
+                            <p>Score : {getPoints(index)}</p>
                         </div>
                     </div>
                 )
@@ -248,16 +166,16 @@ const Game = (props) => {
             </div>
             <div className="table-wrapper">
                 {
-                    (!game.flick) ?
+                    (!game.mutual.flicked) ?
                     <div>
                         Couleur demandée:
-                            <div className={[(game.playable.color) ? game.playable.color : "indefini", "playable"].join(' ')}>‎</div>
+                            <div className={[(playableCard.color) ? playableCard.color : "indefini", "playable"].join(' ')}>‎</div>
                     </div>:
-                        (game.cards.pool.length < game.flickSize) ?
+                        (game.mutual.pool.length < game.mutual.flickSize) ?
                         <div className="buttonHolder">
-                            Cartes défaussées: ({game.cards.pool.length}/{game.flickSize})
+                            Cartes défaussées: ({game.mutual.pool.length}/{game.mutual.flickSize})
                             {
-                                (game.cards.pool.length > 0) ? <button class="btn btn-danger" onClick={handleClear}>X</button>:""
+                                (game.mutual.pool.length > 0) ? <button class="btn btn-danger" onClick={handleClear}>X</button>:""
                             }
                         </div>:
                         <div className="buttonHolder">
@@ -267,9 +185,9 @@ const Game = (props) => {
 
                 }
                 {
-                    game.cursedCard == '' ? "" :
+                    game.mutual.cursedCard  ? "" :
                     <div>
-                        Carte Maudite : <div className={[game.cursedCard, "maudite"].join(' ')}>7</div>
+                        Carte Maudite : <div className={[game.mutual.cursedCard, "maudite"].join(' ')}>7</div>
                     </div>
                 }
             </div>
@@ -285,18 +203,18 @@ const Game = (props) => {
                             : ""
                         }}
                     >
-                    {
-                        game.cards.pool.map((card) =>
-                            <Card
-                                index={card.id}
-                                key={card.id}
-                                card={card}
-                                playable={false}
-                                context={"pool"}
-                                highest={game.highest.id == card.id}
-                            />
-                        )
-                    }
+                        {
+                            game.mutual.pool.map((card) =>
+                                <Card
+                                    index={card.id}
+                                    key={card.id}
+                                    card={card}
+                                    playable={false}
+                                    context={"pool"}
+                                    isHighest={highest.id == card.id}
+                                />
+                            )
+                        }
                     {provided.placeholder}
                     </div>
                 }
@@ -308,12 +226,12 @@ const Game = (props) => {
                         ref={provided.innerRef}
                     >
                     {
-                        game.cards.hand.map((card) =>
+                        game.individual.hand.map((card) =>
                             <Card
                                 index={card.id}
                                 key={card.id}
                                 card={card}
-                                playable={card.playable}
+                                playable={isPlayable(card)}
                                 context={"hand"}
                                 handleClick={handleClick}
                             />
@@ -327,7 +245,7 @@ const Game = (props) => {
             <Stats
                 isModalOpen={isStatModalOpen}
                 toggleModal={handleModalStatsOpen}
-                player={playerStats}
+                user={userStats}
             />
         </div>
     );

@@ -14,14 +14,7 @@ const Profile = () => {
         register: useState(false),
         stats: useState(false)
     }
-
-    const [player, setPlayer] = useState({});
-
     const { user } = useContext(UserContext);
-
-    useEffect(() => {
-        if (user) setPlayer(user.player);
-    }, [user]);
 
     const toggleModal = (context) => {
         switch (context) {
@@ -43,7 +36,7 @@ const Profile = () => {
         return;
     };
     let welcome = "Vous n'êtes pas connecté";
-    if (user.token != null) welcome = "Bienvenue "+player.name+"#"+player.tag+"!";
+    if (user.token != null) welcome = `Bienvenue ${user.name}#${user.tag}!`;
     return (
         <div className="login-wrapper">
             <div className="profile-wrapper">
@@ -80,7 +73,7 @@ const Profile = () => {
                 <Stats
                     isModalOpen={isModalOpen.stats[GET]}
                     toggleModal={() => toggleModal('stats')}
-                    player={player}
+                    user={user}
                 />
             </div>
             <Navbar loggedIn={ user.token != null }/>

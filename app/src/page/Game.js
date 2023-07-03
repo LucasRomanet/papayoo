@@ -17,11 +17,22 @@ const Game = () => {
     const params = useParams();
     // Réduire l'accès à certaines page aux joueurs connecté
     useEffect(() => {
+        function onNotify(gameDTO) {
+            console.log(JSON.parse(gameDTO));
+            setGame(JSON.parse(gameDTO));
+        }
+
         setCode(params.code);
+
+        user.socket.on('notify', onNotify);
+
+        return () => {
+            user.socket.off('notify', onNotify);
+        }
+        
     }, []);
 
     useEffect(() => {
-        
         if (!code) {
             return;
         }
@@ -35,7 +46,7 @@ const Game = () => {
                         console.error("Requete malformée, paramètre(s) manquant(s)");
                         break;
                     case 401:
-                        console.error("Le joueur "+user.player.name+" n'est pas reconnu par le serveur");
+                        console.error(`Le joueur ${user.name} n'est pas reconnu par le serveur`);
                         break;
                     case 402:
                         console.error("Le joueur est déjà dans une partie");
@@ -71,10 +82,10 @@ const Game = () => {
                 ? <p>Loading</p>
                 : (
                     <div>
-                        {(game.status === "WAITING") && <Lobby />}
-                        {(game.status === "PLAYING") && <Board />}
-                        {(game.status === "ENDING") && <End />}
-                        <Chat code={code}/>
+                        {(game.mutual.status === "WAITING") && <Lobby />}
+                        {(game.mutual.status === "PLAYING") && <Board />}
+                        {(game.mutual.status === "ENDING") && <End />}
+                        <Chat />
                     </div>
                 )}
             

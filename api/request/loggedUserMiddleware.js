@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { LOGIN_REQUIRED, INCORRECT_TOKEN } = require('../utils/errors/messagesConsts');
 const { PapayooError } = require('../utils/errors/PapayooError');
-const { playerToSocket, nametag } = require("../utils/game.js");
+const { userToSocket, nametag } = require("../utils/game.js");
 
 function loggedUserMiddleware(req, res, next) {
     const authorization = req.header('Authorization');
@@ -27,8 +27,8 @@ function loggedUserMiddleware(req, res, next) {
         return res.status(500).send( { message: INCORRECT_TOKEN });
     }
 
-    const playerNameTag = nametag({ name, tag });
-    if (token !== playerToSocket.get(playerNameTag).token) {
+    const userNameTag = nametag({ name, tag });
+    if (token !== userToSocket.get(userNameTag).token) {
         return res.status(500).send( { message: INCORRECT_TOKEN });
     }
 

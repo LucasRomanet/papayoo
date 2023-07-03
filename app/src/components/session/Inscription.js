@@ -39,16 +39,13 @@ const Inscription = (props) => {
                 return;
             }
         
-            const { name, tag, games, score, token } = loginResponse.data;
+            const { name, tag, token } = loginResponse.data;
 
-            const loggedUser = {...user};
-            loggedUser.token = token;
-            loggedUser.player = { name, tag, games, score };
-            
+            const loggedUser = {...user, ...loginResponse.data};
             setUser(loggedUser);
 
-            props.notify();
-            socket.emit('login', loggedUser);
+            socket.emit('login', { name, tag, token });
+            
             navigate('/jouer');
         }).catch(error => {
             if (error.loginResponse) console.error(error.message);

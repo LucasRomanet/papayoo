@@ -1,31 +1,18 @@
 import { useContext, useState, useEffect } from "react";
-import Chat from "../Chat.js";
 import Stats from "../Stats.js";
-import UserProfile from '../../utils/UserProfile.js';
 import UserContext from "../../context/user/UserContext";
-import GameContext from "../../context/game/GameContext";
+import GameContext from "../../context/game/GameContext.js";
 
+const MIN_PLAYER_TO_START = process.env.NODE_ENV === 'development' ? 1 : 3;
 
 const Lobby = () => {
 
-    const [playerStats, setPlayerStats] = useState({});
+    const [userStats, setUserStats] = useState({});
     const [isStatModalOpen, setStatModalOpen] = useState(false);
 
     const { user } = useContext(UserContext);
-    const socket = user.socket
-    const { game, setGame } = useContext(GameContext);
-
-    useEffect(() => {
-        socket.on("notify", (arg) => {
-            const newGameState = JSON.parse(arg);
-            setGame(newGameState);
-        });
-    }, []);
-
+    const { game } = useContext(GameContext);
     
-    const isHost = () => {
-        return UserProfile.nametag(game.player[0]) === UserProfile.nametag(user);
-    }
 
     const handleCopyCode = () => {
         let copyTextarea = document.querySelector('.js-copytextarea');
@@ -38,12 +25,15 @@ const Lobby = () => {
     }
 
     const handleSubmit = (event) => {
-        socket.emit('start', {gameCode: game.code});
+        user.socket.emit('start', {gameCode: game.mutual.code});
     }
     
     const handleModalStatsOpen = (id) => {
-        if(id != null) {
-            setPlayerStats(game.player[id]);
+        if(id != null && game != null && game.mutual != null) {
+            const player = game.mutual.players[id];
+            if (player != null) {
+                setUserStats(player.user);
+            }
         }
         setStatModalOpen(!isStatModalOpen);
     }
@@ -51,7 +41,7 @@ const Lobby = () => {
     return (
         <div className="jouer-wrapper">
             {
-            (game.player.length < 3 ) ?
+            (game.mutual.players.length < MIN_PLAYER_TO_START ) ?
                 <h2>En attente d'autres joueurs...</h2>:
                 <h2>En attente du démarrage de la partie...</h2>
 
@@ -59,27 +49,27 @@ const Lobby = () => {
             <div class="row justify-content-center" style={{'align-items': 'center'}}>
                 <h3>Code de la partie: </h3>
                 <button onClick={handleCopyCode} style={{'margin-left' : '5px'}} class="btn btn-info js-textareacopybtn">Copier</button>
-                <input class="js-copytextarea" type="text"  value={game.code}></input>
+                <input class="js-copytextarea" type="text"  value={game.mutual.code}></input>
             </div>
-            <h3>Nombre de joueurs connecté {game.player.length}/{game.maxPlayer}</h3>
+            <h3>Nombre de joueurs connecté {game.mutual.players.length}/{game.mutual.maxPlayer}</h3>
             {
-                game.player.map((joueur, index) =>
+                game.mutual.players.map((player, index) =>
                     <h4>
-                        <a key={index} onClick={() => handleModalStatsOpen(index)} style={{cursor: 'pointer'}}>{joueur.name}#{joueur.tag} {(index===0) ? "[Host]" : ''}</a>
+                        <a key={index} onClick={() => handleModalStatsOpen(index)} style={{cursor: 'pointer'}}>{player.user.name}#{player.user.tag} {player.isHost ? "[Host]" : ''}</a>
                     </h4>
                 )
             }
 
-            <button class="btn btn-primary" disabled={game.player.length < 3} 
-                    style={{display: (isHost()) ? 'block' : 'none'}} 
+            <button class="btn btn-primary" disabled={game.mutual.players.length < MIN_PLAYER_TO_START} 
+                    style={{display: (game.individual.isHost) ? 'block' : 'none'}} 
                     onClick={handleSubmit}>
                         Démarrer la partie
             </button>
             
             <Stats
-                modalOpen={isStatModalOpen}
+                isModalOpen={isStatModalOpen}
                 toggleModal={handleModalStatsOpen}
-                player={playerStats}
+                user={userStats}
             />
         </div>
     );
