@@ -140,7 +140,7 @@ Supprime un joueur de la base de données.
 
 Crée une nouvelle partie de papayoo avec tout les membres du salon d'attente.
 
-#### `flick`
+#### `discard`
 
 ```js
 /* format json attendu:

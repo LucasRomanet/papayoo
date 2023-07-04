@@ -1,53 +1,59 @@
 
-const { userToSocket, currentGame, gameStatus, nametag, shuffle, toGameDTO } = require("../utils/game.js");
-
-
+const { userToSocket, currentGame, shuffle, toGameDTO, Card, cardsColors } = require("../utils/game.js");
 
 function notify(gameCode){
+
     let game = currentGame.get(gameCode);
     if (!game)
         return;
-    
-    for (const userNameTag of game.getPlayersAndSpectators().keys()){
 
+    for (const userNameTag of game.getPlayersAndSpectators().keys()){
         const userSocket = userToSocket.get(userNameTag);
 
         if (userSocket == null || userSocket.socket == null)
             continue;
 
         const gameDTO = toGameDTO(game, userNameTag);
-
+        
         // Send game information
         userSocket.socket.emit("notify", JSON.stringify(gameDTO));
     }
 }
 
-function flick(game) {
-    const prec = null;
-    for (let player of game.players.values()) {
-        if (prec != null) {
-            player.hand = player.hand.concat(prec.handFlick);
-            prec.handFlick = [];
-        }
-        prec = player;
+function discard(game) {
+    // Manual first iteration
+    const playersIterable = game.players.values();
+    const firstPlayer = playersIterable.next().value;
+    let previousPlayer = firstPlayer;
+
+    // Iterate through every player except the first
+    for (let player of playersIterable) {
+        player.hand = player.hand.concat(previousPlayer.discardPile);
+        previousPlayer.discardPile = [];
+        previousPlayer = player;
     }
 
-    // For the first player
-    const player = game.players.values().next().value;
-    player.hand = player.hand.concat(prec.handFlick);
-    prec.handFlick = [];
+    // Last player of the iteration gives cards to first player
+    firstPlayer.hand = firstPlayer.hand.concat(previousPlayer.discardPile); 
+    previousPlayer.discardPile = [];
     
     // Update the game
-    game.flicked = true;
+    game.discarding = false;
     game.mustPlay = game.players.values().next().value.nametag();
-    game.cursedCardId = Math.round(Math.random() * (5 - 2) + 2) * 10 + 6;
+    
 
-    notify(gameCode);
+    // Select random cursedCard
+    const availableColors = Object.values(cardsColors).filter(color => color !== cardsColors.PAYOO);
+    const cursedCardColorIndex = Math.floor(Math.random() * availableColors.length);
+    game.cursedCard = new Card(-1, 7, availableColors[cursedCardColorIndex]);
+    // TODO Supprimer => game.cursedCard = Math.round(Math.random() * (5 - 2) + 2) * 10 + 6;
+
+    notify(game.code);
 }
 
-function includeCardId(id, tab){
-    for(let c of tab.values()){
-        if(c.id == id){
+function includeCardId(id, cards){
+    for(let card of cards.values()){
+        if(card.id === id){
             return true;
         }
     }
@@ -81,4 +87,4 @@ function shufflePlayer(game) {
     }
 }
 
-module.exports = {notify, includeCardColor, includeCardId, includeOneCardId, flick, shufflePlayer};
+module.exports = {notify, includeCardColor, includeCardId, includeOneCardId, discard, shufflePlayer};

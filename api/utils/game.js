@@ -2,6 +2,7 @@ let currentGame = new Map();
 // TODO Supprimer currentUser.
 // non pas forcément le supprimer, mais le vider quand un user se déconnecte
 let currentUser = new Map();
+// TODO : userToSocket peut poser problème si on se connecte sur un compte déjà en partie
 let userToSocket  = new Map();
 
 /**
@@ -14,22 +15,22 @@ const gameStatus = Object.freeze({
     ENDING: 'ENDING'
 });
 
-const cardColor = Object.freeze({
-    payoo: 1,
-    pique: 2,
-    coeur: 3,
-    carreau: 4,
-    trefle: 5
+const cardsColors = Object.freeze({
+    TREFLE: 'TREFLE',
+    CARREAU: 'CARREAU',
+    COEUR: 'COEUR',
+    PIQUE: 'PIQUE',
+    PAYOO: 'PAYOO'
 });
 
 class Game {
     constructor(code) {
         this.code = code;
         this.status = gameStatus.WAITING;
-        this.flicked = true;
-        this.flickSize = 5;
+        this.discarding = true;
+        this.discardSize = 5;
         this.pool = new Array();
-        this.cursedCardId = 0;
+        this.cursedCard = null;
         this.maxPlayer = 8;
         this.players = new Map();
         this.spectators = new Map();
@@ -77,12 +78,12 @@ class Game {
             if (playerTag === this.mustPlay){
                 next = true;
             } else if (next){
-                game.mustPlay = playerTag;
+                this.mustPlay = playerTag;
                 next = false;
             }
         }
         if (next) {
-            game.mustPlay = this.players.keys().next().value;
+            this.mustPlay = this.players.keys().next().value;
         }
     }
 
@@ -94,15 +95,15 @@ class Player {
         this.hand = [];
         this.points = 0;
         this.isHost = false;
-        this.handFlick = [];
+        this.discardPile = [];
     }
 
     nametag() {
         return this.user.toString();
     }
 
-    hasFlicked() {
-        return this.handFlick.length > 0;
+    hasDiscarded() {
+        return this.discardPile.length > 0;
     }
 
     addPoints(points) {
@@ -129,15 +130,24 @@ class Card {
         this.id = id;
         this.number = number;
         this.color = color;
-        this.user = null;
+    }
+}
+
+class PlayedCard extends Card {
+    constructor(id, number, color, userNameTag) {
+        super(id, number, color);
+        this.userNameTag = userNameTag;
     }
 }
 
 /**
  * ========== DTO ==========
  */
-
 function toGameDTO(game, nametag) {
+    if (game == null) {
+        return null;
+    }
+
     const isSpectator = false;
     const player = game.players.get(nametag);
     if (player == null) {
@@ -162,14 +172,40 @@ function toGameDTO(game, nametag) {
         const userDTO = new UserDTO(user.name, user.tag, user.gamesPlayed, user.score, user.playingGame);
         spectators.set(nametag, new PlayerDTO(userDTO, player.score, player.isHost));
     }
-    
-    const mutualGameStateDTO = new MutualGameStateDTO(game.code, game.status, game.flicked, game.flickSize, game.pool, game.cursedCardId, game.maxPlayer, game.mustPlay, players, spectators);
+
+    const pool = [];
+    for (let card of game.pool) {
+        pool.push(toPlayedCardDTO(card));
+    }
+    const mutualGameStateDTO = new MutualGameStateDTO(game.code, game.status, game.discarding, game.discardSize, pool, toCardDTO(game.cursedCard), game.maxPlayer, game.mustPlay, players, spectators);
 
     // IndividualGameStateDTO
-    const individualGameStateDTO = new IndividualGameStateDTO(player.hand, player.isHost, isSpectator, player.handFlick);
+    const hand = [];
+    for (let card of player.hand) {
+        hand.push(toCardDTO(card));
+    }
+    const discardPile = [];
+    for (let card of player.discardPile) {
+        discardPile.push(toCardDTO(card));
+    }
+    const individualGameStateDTO = new IndividualGameStateDTO(hand, player.isHost, isSpectator, discardPile);
 
     // GameDTO
     return new GameDTO(mutualGameStateDTO, individualGameStateDTO);
+}
+
+function toCardDTO(card) {
+    if (card == null) {
+        return null;
+    }
+    return new CardDTO(card.id, card.number, card.color);
+}
+
+function toPlayedCardDTO(playedCard) {
+    if (playedCard == null) {
+        return null;
+    }
+    return new PlayedCardDTO(playedCard.id, playedCard.number, playedCard.color, playedCard.userNameTag);
 }
 
 class GameDTO {
@@ -218,14 +254,28 @@ class CardDTO {
     }
 }
 
+class PlayedCardDTO extends CardDTO {
+    constructor(id, number, color, userNameTag) {
+        super(id, number, color);
+        this.userNameTag = userNameTag;
+    }
+
+    toJSON() {
+        return {
+            ...super.toJSON(),
+            userNameTag: this.userNameTag
+        }
+    }
+}
+
 class MutualGameStateDTO {
-    constructor(code, status, flicked, flickSize, pool, cursedCardId, maxPlayer, mustPlay, players, spectators) {
+    constructor(code, status, discarding, discardSize, pool, cursedCard, maxPlayer, mustPlay, players, spectators) {
         this.code = code;
         this.status = status;
-        this.flicked = flicked;
-        this.flickSize = flickSize;
+        this.discarding = discarding;
+        this.discardSize = discardSize;
         this.pool = pool;
-        this.cursedCardId = cursedCardId;
+        this.cursedCard = cursedCard;
         this.maxPlayer = maxPlayer;
         this.mustPlay = mustPlay;
         this.players = players;
@@ -236,10 +286,10 @@ class MutualGameStateDTO {
         return {
             code: this.code,
             status: this.status,
-            flicked: this.flicked,
-            flickSize: this.flickSize,
+            discarding: this.discarding,
+            discardSize: this.discardSize,
             pool: this.pool,
-            cursedCardId: this.cursedCardId,
+            cursedCard: this.cursedCard,
             maxPlayer: this.maxPlayer,
             mustPlay: this.mustPlay,
             players: Array.from(this.players.values()),
@@ -249,11 +299,11 @@ class MutualGameStateDTO {
 }
 
 class IndividualGameStateDTO {
-    constructor(hand, isHost, isSpectator, handFlick) {
+    constructor(hand, isHost, isSpectator, discardPile) {
         this.hand = hand;
         this.isHost = isHost;
         this.isSpectator = isSpectator;
-        this.handFlick = handFlick;
+        this.discardPile = discardPile;
     }
 
     toJSON() {
@@ -261,7 +311,7 @@ class IndividualGameStateDTO {
             hand: this.hand,
             isHost: this.isHost,
             isSpectator: this.isSpectator,
-            handFlick: this.handFlick
+            discardPile: this.discardPile
         }
     }
 }
@@ -273,6 +323,36 @@ class UserDTO {
         this.gamesPlayed = gamesPlayed;
         this.score = score;
         this.playingGame = playingGame;
+    }
+
+    toJSON() {
+        return {
+            name: this.name,
+            tag: this.tag,
+            gamesPlayed: this.gamesPlayed,
+            score: this.score,
+            playingGame: this.playingGame
+        }
+    }
+}
+
+class LoggedUserDTO {
+    constructor(token, name, tag, gamesPlayed, score) {
+        this.token = token;
+        this.name = name;
+        this.tag = tag;
+        this.gamesPlayed = gamesPlayed;
+        this.score = score
+    }
+
+    toJSON() {
+        return {
+            token: this.token,
+            name: this.name,
+            tag: this.tag,
+            gamesPlayed: this.gamesPlayed,
+            score: this.score
+        }
     }
 }
 
@@ -295,60 +375,40 @@ function createJoinCode(length) {
     return result;
 }
 
-const cardColors = Object.freeze({
-    TREFLE: 'TREFLE',
-    CARREAU: 'CARREAU',
-    COEUR: 'COEUR',
-    PIQUE: 'PIQUE',
-    PAYOO: 'PAYOO'
-});
-
 function initCards() {
     let id = 0;
     const cards = [];
-    // Normal cards
-    for (let color in [cardsColors.TREFLE, cardsColors.CARREAU, cardsColors.COEUR, cardsColors.PIQUE]) {
-        for (let i = 1; i < 10; i++) {
-            cards.push(new Card(id++, i, color));
-        }
-    }
     // Payoo
     for (let i = 1; i < 20; i++) {
         cards.push(new Card(id++, i, cardsColors.PAYOO));
     }
+    // Normal cards
+    for (let color of [cardsColors.TREFLE, cardsColors.CARREAU, cardsColors.COEUR, cardsColors.PIQUE]) {
+        for (let i = 1; i < 10; i++) {
+            cards.push(new Card(id++, i, color));
+        }
+    }
+    return cards;
 }
 
 function distributeCard(game) {
-    let colorSize,
-        id=0,
-        stack = new Array();
-    for (const color in cardColor) {
-        if (color==="payoo") colorSize=20;
-        else colorSize=10;
-        for(let i = 1; i <= colorSize; i++, id++) {
-            stack.push({
-                id: id,
-                number: i,
-                color: color
-            });
-        }
+    let cards = initCards();
+
+    if (game.players.size > 6) {
+        cards = cards.filter(card => card.color === cardsColors.PAYOO || card.number !== 1);
     }
-    if (game.players.size > 6){
-        for(let i = 20;i<50; i+=9) {
-            stack.splice(i,1);
-        }
-    }
-    stack = shuffle(stack);
+
+    cards = shuffle(cards);
     for (let spectator of game.spectators.values()) {
         spectator.hand = [];
-        spectator.handFlick = [];
+        spectator.discardPile = [];
     }
 
     let i = 0;
-    let cardPerPlayer = stack.length / game.players.size;
+    let cardPerPlayer = cards.length / game.players.size;
     for (let player of game.players.values()) {
-        player.hand = [...stack.slice(i * cardPerPlayer, (i + 1) * cardPerPlayer)];
-        player.handFlick = [];
+        player.hand = [...cards.slice(i * cardPerPlayer, (i + 1) * cardPerPlayer)];
+        player.discardPile = [];
     }
 }
 
@@ -365,6 +425,6 @@ function shuffle(a) {
 
 
 module.exports = { currentGame, currentUser, userToSocket, gameStatus, distributeCard,
-    GameDTO, PlayerDTO, MutualGameStateDTO, IndividualGameStateDTO, toGameDTO,
-    Game, Player, User, Card,
+    GameDTO, PlayerDTO, MutualGameStateDTO, IndividualGameStateDTO, toGameDTO, cardsColors, initCards,
+    Game, Player, User, Card, PlayedCard, LoggedUserDTO,
     nametag, createJoinCode, shuffle };

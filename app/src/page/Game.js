@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { joinGame } from "../api";
-import Chat from "../components/Chat.js";
+import Chat from "../components/game/Chat.js";
 import Lobby from "../components/game/Lobby.js";
 import Board from "../components/game/Board.js";
 import End from "../components/game/End.js";

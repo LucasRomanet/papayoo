@@ -82,20 +82,19 @@
     border: 1px solid red;
     font-weight: bold;
 }
-.coeur{
+.COEUR {
     background-image: url('../img/coeur.png');
 }
-.carreau{
+.CARREAU {
     background-image: url('../img/carreau.png');
 }
-.pique{
+.PIQUE {
     background-image: url('../img/pique.png');
 }
-.trefle{
+.TREFLE {
     background-image: url('../img/trefle.png');
 }
-.payoo, .indefini{
-
+.PAYOO, .indefini{
     background-image: url('../img/payoo.png');
     color: white;
 }

@@ -5,21 +5,21 @@ function Card({index, card, playable, context, isHighest, handleClick}) {
         "card-overlay"+
         (isHighest ? " highest" : '');
     return (
-        <Draggable index={index} draggableId={index.toString()}>
+        <Draggable index={index} draggableId={index.toString()} shouldRespectForcePress="true">
             {(provided, snapshot) =>
                 <div
                     ref={provided.innerRef}
-                    {...(playable && context==="hand") ? provided.draggableProps:""}
+                    {...(playable && context==="hand") ? provided.draggableProps : ""}
                     {...provided.dragHandleProps}
                     style={{
                             userSelect: "none",
                             marginLeft: (context==="hand")
                                 ? "-35px"
                                 : "-20px",
-                            ...((playable || context==="pool") ? provided.draggableProps.style = null : '')
+                            ...((playable || context==="pool") ? provided.draggableProps.style : '')
                             }
                         }
-                    id={card.id}
+                    id={index}
                     className={[card.color, "card-container"].join(' ')}
                     onClick={handleClick}>
                     <div

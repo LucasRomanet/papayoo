@@ -1,7 +1,7 @@
 const sock = require('socket.io');
 const UserModel = require('../model/User');
-const { userToSocket, currentUser, currentGame, gameStatus, distributeCard, nametag } = require("../utils/game.js");
-const { notify, includeCardColor, includeCardId, includeOneCardId, flick, shufflePlayer } = require("../utils/socket.js");
+const { userToSocket, currentUser, currentGame, gameStatus, distributeCard, nametag, PlayedCard, cardsColors } = require("../utils/game.js");
+const { notify, includeCardColor, includeCardId, includeOneCardId, discard, shufflePlayer, } = require("../utils/socket.js");
 const { MIN_PLAYER_TO_START } = require('../utils/const.js');
 
 function loadGameSocket(socket){
@@ -30,13 +30,15 @@ function loadGameSocket(socket){
             notify(gameCode);
         }
     });
+    
     socket.on('ask', ()=> {
         const user = socket.user;
         if (user != null && user.playingGame != "") {
             notify(user.playingGame);
         }
     });
-    socket.on('flick', (data)=>{
+
+    socket.on('discard', (data)=>{
         /* format awaited:
         {
             gameCode: string,
@@ -50,7 +52,7 @@ function loadGameSocket(socket){
         if (user == null) {
             return;
         }
-
+        
         const { gameCode, cards } = data;
         const game = currentGame.get(gameCode);
         if (game == null) {
@@ -62,34 +64,34 @@ function loadGameSocket(socket){
             return;
         }
 
-        let nbToBeFlicked = 0;
+        let nbToBeDiscarded = 0;
         switch(game.players.size){
             case 3 :
-            case 4 : nbToBeFlicked = 5; break;
-            case 5 : nbToBeFlicked = 4; break;
-            default : nbToBeFlicked = 3;
+            case 4 : nbToBeDiscarded = 5; break;
+            case 5 : nbToBeDiscarded = 4; break;
+            default : nbToBeDiscarded = 3;
         }
 
-        if (game.flicked || player.hasFlicked() || cards.length != nbToBeFlicked) {
+        if (!game.discarding || player.hasDiscarded() || cards.length != nbToBeDiscarded) {
             return;
         }
 
         for (let card in cards){
-            if (!includeCardId(cards[card].id, player.hand)){
+            if (!includeCardId(card.id, player.hand)){
                 return;
             }
         }
-        
-        player.handFlick = cards;
-        player.hand = player.hand.filter(item => !includeCardId(item.id, cards));
+
+        player.discardPile = cards;
+        player.hand = player.hand.filter(card => !includeCardId(card.id, cards));
 
         for (let playerToBeChecked of game.players.values()) {
-            if (!playerToBeChecked.hasFlicked()) {
+            if (!playerToBeChecked.hasDiscarded()) {
                 return;
             }
         }
 
-        flick(game);
+        discard(game);
     });
 
     socket.on('play', (data)=>{
@@ -109,35 +111,45 @@ function loadGameSocket(socket){
 
         const { gameCode, card } = data;
         let game = currentGame.get(gameCode);
-        if (game == null || !game.flicked) {
+        if (game == null || game.discarding) {
             return;
         }
-
+        
         const player = game.players.get(nametag(user));
         if (player == null) {
             return;
         }
 
-        let colorAsk;
+        let askedColor;
         if (game.pool.length < 1){
-            colorAsk = card.color;
+            askedColor = card.color;
         } else {
-            colorAsk = game.pool[0].color;
+            askedColor = game.pool[0].color;
         }
 
-        if (includeCardId(card.id, player.hand) && game.mustPlay == player.nametag() && ((player.hand.filter(item => includeCardColor(item,colorAsk)).length>0&& card.color == colorAsk) || player.hand.filter(item => includeCardColor(item,colorAsk)).length < 1 )){
-            let card = card;
-            card.user = user;
-            game.pool.push(card);
-
-            player.hand = player.hand.filter(item => includeOneCardId(card.id, item));
-            if (game.pool.length >= game.players.size) {
-                checkWinnerOfRound(game);
-            } else {
-                game.setNextPlayer();
-            }
-            notify(gameCode);
+        // Check if it's the player's turn
+        if (game.mustPlay !== player.nametag()) {
+            return;
         }
+
+        // Check if the player can play this card
+        const hasColorInHand = player.hand.filter(item => includeCardColor(item, askedColor)).length > 0;
+        const canPlayThisCard = includeCardId(card.id, player.hand) && hasColorInHand && card.color == askedColor
+        if (!canPlayThisCard) {
+            return;
+        }
+
+        // Stack to the pile of played cards
+        const playedCard = new PlayedCard(card.id, card.number, card.color, nametag(user));
+        game.pool.push(playedCard);
+        player.hand = player.hand.filter(item => includeOneCardId(playedCard.id, item));
+        
+        if (game.pool.length >= game.players.size) {
+            checkWinnerOfRound(game, askedColor);
+        } else {
+            game.setNextPlayer();
+        }
+        notify(gameCode);
     });
 
 
@@ -170,69 +182,84 @@ function loadGameSocket(socket){
 
 }
 
-function checkWinnerOfRound(game) {
-    // Retrieve the losing card
-    let losingCard = game.pool[0];
-    Array.from(game.pool).filter(item => includeCardColor(item,colorAsk)).forEach(element => {
-        if(element.id > losingCard.id){
-            losingCard = element;
-        }
-    });
+function checkWinnerOfRound(game, askedColor) {
     
-
+    // Retrieve the losing card
+    let losingCard = null;
+    game.pool.filter(item => includeCardColor(item, askedColor))
+        .forEach(card => {
+            if (losingCard == null || card.number > losingCard.number){
+                losingCard = card;
+            }
+        });
+    
     // Update points of players
     for (let player of game.players.values()) {
-        if (player.user != losingCard.user) {
+        if (player.nametag() != losingCard.userNameTag) {
             return;
         }
+
+        // Count the points of player
         let points = 0;
-        if (includeCardId(game.cursedCardId, game.pool)){
+        if (includeCardId(game.cursedCard.id, game.pool)){
             points += 40;
         }
-        Array.from(game.pool).filter(item => includeCardColor(item, "payoo")).forEach(element => {
-            points = points + element.number;
-        });
+
+        game.pool.filter(item => includeCardColor(item, cardsColors.PAYOO))
+            .forEach(element => points += element.number);
+        
+        // Add the points
         player.addPoints(points);
     }
 
     game.mustPlay = null;
     setTimeout(() => {
-        game.mustPlay = nametag(losingCard.user);
-        if (player.hand.length >= 1){
-            notify(gameCode);
-            return;
+        if (player.hand.length >= 1) {
+            startNextRound(game, losingCard.userNameTag);
+        } else {
+            endGame(game);
         }
+    }, 1300);
+}
 
-        game.pool = new Array();
-        game.status = gameStatus.ENDING;
+function startNextRound(game, userNameTag) {
+    game.mustPlay = userNameTag;
+    notify(game.code);
+}
 
-        // Update score of players
-        for (let player of game.players.values()){
-            UserModel.find({name : player.user.name, tag: player.user.tag}, {'_id': 0, '__v':0, 'password':0}).exec((err, data) => {
-                if (err){return;}
-                else if(!data.length){return;}
-                else {
+function endGame(game) {
+    game.pool = new Array();
+    game.status = gameStatus.ENDING;
+
+    // Update score of players
+    for (let player of game.players.values()){
+        UserModel.find({name : player.user.name, tag: player.user.tag}, {'_id': 0, '__v': 0, 'password': 0})
+            .exec((err, data) => {
+                if (err || !data.length){
+                    return;
+                } else {
                     return UserModel.updateOne({
-                        name : player.user.name, 
+                        name: player.user.name, 
                         tag: player.user.tag
                     },
                     {
                         score: parseInt(data[0].score) + player.points,
                         games: parseInt(data[0].games) + 1
                     }, (err) => {
-                        if (err) return;
+                        if (err) {
+                            return;
+                        }
                     });
                 }
             });
-        }
-        notify(gameCode);
+    }
 
-        for (const user of game.getPlayersAndSpectators().values()){
-            currentUser.get(nametag(user)).playingGame = "";
-        }
-        currentGame.delete(gameCode);
-
-    }, 1300);
+    // End the game
+    notify(game.code);
+    for (const user of game.getPlayersAndSpectators().values()){
+        currentUser.get(nametag(user)).playingGame = "";
+    }
+    currentGame.delete(game.code);
 }
 
 module.exports = {loadGameSocket};

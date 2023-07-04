@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { LoggedUserDTO } = require('../utils/game.js');
 
 const { getAllUsers, isUserExist, getOneUser, createUser, isCorrectName, isCorrectTag, isCorrectPassword } = require("../model/helpers/userHelper");
 
@@ -101,13 +102,7 @@ function logUser(user) {
     const userNameTag = nametag({ name: user.name, tag: user.tag });
     userToSocket.set(userNameTag, { token });
 
-    return {
-        token, 
-        name: user.name,
-        tag: user.tag, 
-        games: user.games, 
-        score: user.score
-    };
+    return new LoggedUserDTO(token, user.name, user.tag, user.games, user.score);
 }
 
 function canCreateUser(name, tag, password) {

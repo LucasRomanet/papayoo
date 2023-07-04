@@ -1,22 +1,28 @@
 import { useContext, useState, useEffect } from "react";
-import Card from "./Card.js";
-import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import Pool from "./board/Pool.js";
+import Hand from "./board/Hand.js";
+import Opponents from "./board/Opponents.js";
+import Discard from "./board/Discard.js";
+import RequiredColor from "./board/RequiredColor.js";
+import CursedCard from "./board/CursedCard.js";
+import { DragDropContext } from 'react-beautiful-dnd';
 import '../../style/partie.css';
-import UserProfile from '../../utils/UserProfile.js';
+import { nametag, byId }  from '../../utils/tools.js';
 import Stats from "../Stats.js"
 import UserContext from "../../context/user/UserContext";
 import GameContext from "../../context/game/GameContext.js";
 
-function byId(a, b) {return a.id-b.id};
-
 const Game = () => {
+    const [hand, setHand] = useState([]);
+    const [pool, setPool] = useState([]);
 
     const [userStats, setUserStats] = useState({});
     const [isStatModalOpen, setStatModalOpen] = useState(false);
     const [playableCard, setPlayableCard] = useState({
-        color: null,
+        askedColor: null,
         noColorCardsLeft: false
     });
+
     const [highest, setHighest] = useState({
         id:-1,
         number:-1,
@@ -24,21 +30,24 @@ const Game = () => {
     });
 
     const { user } = useContext(UserContext);
-    const { game, setGame } = useContext(GameContext);
+    const { game } = useContext(GameContext);
 
     useEffect(() => {
-        if (game.mutual.status !== 'ENDING') {
-            let color, last = game.mutual.pool.slice(-1);
-            if (last.length) { color = game.mutual.pool[0].color }
+        setHand(game.individual.hand.sort(byId));
+        setPool(game.mutual.pool);
 
-            setPlayableCard({
-                color: color,
-                noColorCardsLeft: searchHandForColor(color)
-            });
-
-            setCursedCard(game.mutual.cursedCardId);
+        const last = pool.slice(-1);
+        if (!last.length) {
+            return;
         }
-        console.log(game);
+
+        const color = pool[0].color;
+
+        setPlayableCard({
+            askedColor: color,
+            noColorCardsLeft: !isColorInHand(color)
+        });
+
     }, [game]);
 
     
@@ -50,197 +59,104 @@ const Game = () => {
         setStatModalOpen(!isStatModalOpen);
     }
 
-    const setCursedCard = (id) => {
-        switch(id) {
-            case 26 :
-                setGame({
-                    ...game,
-                    cursedCard: "pique"
-                });
-                break;
-            case 36 :
-                setGame({
-                    ...game,
-                    cursedCard: "coeur"
-                });
-                break;
-            case 46 :
-                setGame({
-                    ...game,
-                    cursedCard: "carreau"
-                });
-                break;
-            case 56 :
-                setGame({
-                    ...game,
-                    cursedCard: "trefle"
-                });
-                break;
+    const isColorInHand = (color) => {
+        for (const card of hand) {
+            if (card.color === color) return true;
         }
-    }
-
-    const searchHandForColor = (color) => {
-        let found = false;
-        game.individual.hand.forEach((card, _) => {
-            found = (card.color === color || found);
-        });
-        return found;
+        return false;
     }
 
     const isPlayable = (card) => {
-        if (game.mutual.flicked) {
-            return game.mutual.pool.length < game.mutual.flickSize;
+        if (game.mutual.discarding) {
+            return pool.length < game.mutual.discardSize;
         }
 
-        const isPlayerTurn = UserProfile.nametag(user) == game.mutual.mustPlay;
-        const isRequiredColor = playableCard.color === card.color || playableCard.noColorCardsLeft;
+        const isPlayerTurn = nametag(user) == game.mutual.mustPlay;
+        const isRequiredColor = playableCard.askedColor === card.color || playableCard.noColorCardsLeft;
 
         return isPlayerTurn && isRequiredColor;
     }
 
     const handleClick = (event) => {
-        let id, color = playableCard.color;
-        if (event.target)
+        let playable = {
+            askedColor: null,
+            noColorCardsLeft: false
+        }
+
+        let id
+        if (event.target) {
             id = event.target.closest(".card-container").id;
-        else if (event.destination && event.destination.droppableId === "pool")
+        }
+        else if (event.destination && event.destination.droppableId === "pool") {
             id = event.draggableId;
+        }
+            
         else return;
 
+        const cardIndex = hand.findIndex(card => card.id == id);
+        const card = hand.splice(cardIndex, 1)[0];
 
-        const cardIndex = game.individual.hand.findIndex((card) => card.id == id);
-        const card = game.individual.hand[cardIndex];
-        if (isPlayable(card)){
-            if (!game.mutual.flicked) {
-                user.socket.emit('play', {gameCode: game.mutual.code, card: card});
-            }
-            delete game.individual.hand[cardIndex];
-            if (!game.mutual.pool.length) color = card.color;
-            game.mutual.pool.push(card);
-            if (card.color === color && card.number > highest.number) setHighest(card);
-            let playable = {
-               color: null,
-               noColorCardsLeft: false
-            }
-            if (!game.mutual.flicked) playable = {
-                color: color,
-                noColorCardsLeft: searchHandForColor(color)
-            }
-            setPlayableCard(playable);
+        if (!isPlayable(card)) {
+            return;
         }
 
+        if (!game.mutual.discarding) {
+            user.socket.emit('play', {gameCode: game.mutual.code, card: card});
+        }
+
+        if (!pool.length) {
+            playable.askedColor = card.color;
+        }
+
+        pool.push(card);
+
+        if (card.color === playableCard.askedColor && card.number > highest.number) setHighest(card);
+        
+        if (!game.mutual.discarding) {
+            playable = {
+                askedColor: playableCard.askedColor,
+                noColorCardsLeft: !isColorInHand(playableCard.askedColor)
+            }
+        }
+
+        setPlayableCard(playable);
     }
 
-    const handleFlick = (event) => {
-        user.socket.emit('flick', {gameCode: game.mutual.code, cards: game.mutual.pool});
+    const handleDiscard = (event) => {
+        user.socket.emit('discard', {gameCode: game.mutual.code, cards: pool});
     }
+
     const handleClear = (event) => {
-        game.individual.hand = [...game.individual.hand, ...game.mutual.pool]
-        setGame(game);
+        setHand([...hand, ...pool].sort(byId));
+        setPool([]);
     }
 
-    const getPoints = (index) => {
-        let player = game.mutual.players[index];
-        if(player != null) {
-            return player.points;
-        }
-        return 0;
-    }
-
-    let navbar = document.getElementsByClassName("navbar")[0];
-    if (navbar) navbar.style.display = "none";
     return (
         <div>
-            <div className="opponent-wrapper">
-            {
-                game.mutual.players.map((player, index) =>
-                    <div className={[(UserProfile.nametag(player.user) === game.mutual.mustPlay) ? "must-play":"", "player-wrapper"].join(' ')} >
-                        <div className="opponent" index={index}>
-                            <a key={index} onClick={() => handleModalStatsOpen(index)} style={{cursor: 'pointer'}} >{player.user.name}#{player.user.tag}</a>
-                        </div>
-                        <div className="opponent" index={index}>
-                            <p>Score : {getPoints(index)}</p>
-                        </div>
-                    </div>
-                )
-            }
-            </div>
+            
+            <Opponents handleModalStatsOpen={handleModalStatsOpen} />
+
             <div className="table-wrapper">
                 {
-                    (!game.mutual.flicked) ?
-                    <div>
-                        Couleur demandée:
-                            <div className={[(playableCard.color) ? playableCard.color : "indefini", "playable"].join(' ')}>‎</div>
-                    </div>:
-                        (game.mutual.pool.length < game.mutual.flickSize) ?
-                        <div className="buttonHolder">
-                            Cartes défaussées: ({game.mutual.pool.length}/{game.mutual.flickSize})
-                            {
-                                (game.mutual.pool.length > 0) ? <button class="btn btn-danger" onClick={handleClear}>X</button>:""
-                            }
-                        </div>:
-                        <div className="buttonHolder">
-                            <button class="btn btn-success" onClick={handleFlick}>Valider la défausse</button>
-                            <button class="btn btn-danger" onClick={handleClear}>X</button>
-                        </div>
-
+                    game.mutual.discarding 
+                        ? <Discard handleClear={handleClear} handleDiscard={handleDiscard} poolCardsAmount={pool.length} />
+                        : <RequiredColor askedColor={playableCard.askedColor} />
                 }
                 {
-                    game.mutual.cursedCard  ? "" :
-                    <div>
-                        Carte Maudite : <div className={[game.mutual.cursedCard, "maudite"].join(' ')}>7</div>
-                    </div>
+                    game.mutual.cursedCard && <CursedCard cursedCardColor={game.mutual.cursedCard.color} />
                 }
             </div>
+
             <DragDropContext onDragEnd={handleClick}>
-                <Droppable droppableId="pool" key="pool" direction="horizontal">
-                {(provided, snapshot) =>
-                    <div
-                        className="pool-wrapper"
-                        ref={provided.innerRef}
-                        style={{
-                            background: snapshot.isDraggingOver
-                            ? "rgba(10,10,10,.3)"
-                            : ""
-                        }}
-                    >
-                        {
-                            game.mutual.pool.map((card) =>
-                                <Card
-                                    index={card.id}
-                                    key={card.id}
-                                    card={card}
-                                    playable={false}
-                                    context={"pool"}
-                                    isHighest={highest.id == card.id}
-                                />
-                            )
-                        }
-                    {provided.placeholder}
-                    </div>
-                }
-                </Droppable>
-                <Droppable droppableId="hand" key="hand" direction="horizontal">
-                {(provided, snapshot) =>
-                    <div
-                        className="hand-wrapper"
-                        ref={provided.innerRef}
-                    >
-                    {
-                        game.individual.hand.map((card) =>
-                            <Card
-                                index={card.id}
-                                key={card.id}
-                                card={card}
-                                playable={isPlayable(card)}
-                                context={"hand"}
-                                handleClick={handleClick}
-                            />
-                        )
-                    }
-                    {provided.placeholder}
-                    </div>
-                }
-                </Droppable>
+                <Pool 
+                    pool={pool}
+                    highest={highest}
+                />
+                <Hand
+                    hand={hand}
+                    isPlayable={isPlayable}
+                    handleClick={handleClick}
+                />
             </DragDropContext>
             <Stats
                 isModalOpen={isStatModalOpen}

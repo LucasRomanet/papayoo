@@ -1,18 +1,25 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Modal from 'react-bootstrap/Modal';
+import { useMemo } from 'react';
 
-const Stats = (props) => {
-    let user = {
-        name: "Guest",
-        tag: "0000",
-        gamesPlayed: 0,
-        score: 0
-    };
-    if (props.user) user = props.user;
-    const { name, tag, gamesPlayed, score } = user;
+const DEFAULT_USER = {
+    name: "Guest",
+    tag: "0000",
+    gamesPlayed: 0,
+    score: 0
+};
+
+const Stats = ({ user, isModalOpen, toggleModal }) => {
+
+    const { name, tag, gamesPlayed, score } = useMemo(() => {
+        if (user) {
+            return user;
+        }
+        return DEFAULT_USER;
+    }, [user]);
 
     return (
-        <Modal show={props.isModalOpen} onHide={props.toggleModal}>
+        <Modal show={isModalOpen} onHide={toggleModal}>
             <Modal.Header closeButton>
                 <Modal.Title><h2>Statistiques du joueur</h2></Modal.Title>
             </Modal.Header>

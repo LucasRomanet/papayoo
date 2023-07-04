@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import "../style/classement.css";
-import Loading from "../components/error/Loading"
-import UserProfile from '../utils/UserProfile';
+import nametag from '../utils/tools';
 import {getAllUsers} from "../api";
 
 function byGames(a, b) {return a.games-b.games};
@@ -65,7 +64,7 @@ class Classement extends Component{
                                     <tr key={index} className="joueur-classement">
                                         <td>{index+1}. </td>
                                         <td>
-                                            {UserProfile.nametag(joueur)}
+                                            {nametag(joueur)}
                                         </td>
                                         <td>
                                             {joueur.games}

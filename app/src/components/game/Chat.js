@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from "react";
-import UserContext from "../context/user/UserContext";
-import GameContext from "../context/game/GameContext";
-import "../style/chat.css";
+import UserContext from "../../context/user/UserContext";
+import GameContext from "../../context/game/GameContext";
+import "../../style/chat.css";
 
 const Chat = () => {
     const [chatInput, setChatInput] = useState('');

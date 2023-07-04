@@ -56,6 +56,7 @@ router.post('/:gameCode', loggedUserMiddleware, (req, res) => {
 
         return res.json(gameDTO);
     } catch (e) {
+        console.log(e);
         return res.status(500).send( { message: getErrorMessage('Erreur lors l\'ajout du joueur dans la partie', e) } )
     }
 });
