@@ -1,13 +1,14 @@
-import { useContext, useState, useEffect, useCallback } from "react";
+import { useContext, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import Connexion from "../components/session/Connexion";
 import Inscription from "../components/session/Inscription";
 import Stats from "./Stats"
 import UserContext from "../context/user/UserContext";
-import Navbar from "./Navbar";
 import "../style/profile.css";
 
 const Profile = () => {
-    const { user } = useContext(UserContext);
+    const { user, setUser } = useContext(UserContext);
+    const navigate = useNavigate();
 
     const [isLoginModalOpen, setLoginModalOpen] = useState(false);
     const [isRegisterModalOpen, setRegisterModalOpen] = useState(false);
@@ -26,8 +27,8 @@ const Profile = () => {
     }, [isStatsModalOpen, setStatsModalOpen]);
 
     const logout = () => {
-        // TODO
-        return;
+        setUser({ socket: user.socket });
+        navigate('/');
     };
 
     return (
@@ -37,30 +38,24 @@ const Profile = () => {
                     {
                         user.token 
                             ? (
-                                <>
-                                    Bienvenue {user.name}#{user.tag}!
-                                    <div>
-                                        <button onClick={toggleStatsModal} className="btn btn-danger">
-                                            Profil
-                                        </button>
-                                        <button onClick={logout} className="btn btn-danger">
-                                            Déconnexion
-                                        </button>
-                                    </div>
-                                </>
+                                <div>
+                                    <button onClick={toggleStatsModal} className="btn btn-danger">
+                                        Profil
+                                    </button>
+                                    <button onClick={logout} className="btn btn-danger">
+                                        Déconnexion
+                                    </button>
+                                </div>
                             )
                             : (
-                                <>
-                                    Vous n'êtes pas connecté
-                                    <div>
-                                        <button onClick={toggleLoginModal} className="btn btn-danger">
-                                            Connexion
-                                        </button>
-                                        <button onClick={toggleRegisterModal} className="btn btn-danger">
-                                            Inscription
-                                        </button>
-                                    </div>
-                                </>
+                                <div>
+                                    <button onClick={toggleLoginModal} className="btn btn-danger">
+                                        Connexion
+                                    </button>
+                                    <button onClick={toggleRegisterModal} className="btn btn-danger">
+                                        Inscription
+                                    </button>
+                                </div>
                             )
                     }
                 </div>

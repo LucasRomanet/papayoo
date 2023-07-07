@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { LOGIN_REQUIRED, INCORRECT_TOKEN } = require('../utils/errors/messagesConsts');
-const { PapayooError } = require('../utils/errors/PapayooError');
-const { loggedUsers } = require("../utils/game");
+const { LOGIN_REQUIRED, INCORRECT_TOKEN } = require('../utils/error/messagesConsts');
+const { PapayooError } = require('../utils/error/PapayooError');
+const { loggedUsers } = require("../utils/helper/gameHelper");
 
 function loggedUserMiddleware(req, res, next) {
     const authorization = req.header('Authorization');

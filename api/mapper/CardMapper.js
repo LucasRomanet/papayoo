@@ -1,5 +1,5 @@
-const Card = require('../model/bo/Card.js');
-const CardDTO = require('../model/dto/CardDTO.js');
+const Card = require('../model/bo/Card');
+const CardDTO = require('../model/dto/CardDTO');
 
 function toCard(card) {
     if (card == null) {

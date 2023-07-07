@@ -4,11 +4,9 @@ import "../style/header.css";
 import Profile from "./Profile";
 import Navbar from "./Navbar";
 import UserContext from "../context/user/UserContext";
-import GameContext from "../context/game/GameContext";
 
 const Header = () => {
     const { user } = useContext(UserContext);
-    const { game } = useContext(GameContext);
 
     return (
         
@@ -16,7 +14,7 @@ const Header = () => {
             <img src={logo} alt="Logo" />
             <Profile />
 
-            {(game == null) && <Navbar loggedIn={ user.token != null }/>}
+            <Navbar loggedIn={ user.token != null }/>
         </div>
     )
 }

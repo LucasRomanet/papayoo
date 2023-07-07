@@ -31,13 +31,13 @@ if (process.env.NODE_ENV === 'development') {
     app.use(logger('dev'));
 }
 
-const request = require("./request/request.js");
+const request = require("./request/route");
 // append /api for our http requests
 app.use('/api', request);
 // launch our backend into a port
-var server = app.listen(process.env.API_PORT, () => console.log("Server running on port "+process.env.API_PORT));
+const server = app.listen(process.env.API_PORT, () => console.log("Server running on port "+process.env.API_PORT));
 
-const {initSocket} = require('./socket/initSocket');
+const { subscribeToSessionEvents } = require('./socket/session');
 
-initSocket(server);
+subscribeToSessionEvents(server);
 

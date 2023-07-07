@@ -54,7 +54,7 @@ const Rules = () => {
 
 
             <p>Après distribution, les joueurs procèdent à l'écart: chacun se débarrasse des cartes de son choix en retirant
-                de son jeu le nombre de cartes précisé sur le tableau et les pose, faces cachées, devant son voisin de gauche;</p>
+                de son jeu le nombre de cartes précisé sur le tableau et défausse à son voisin de gauche;</p>
 
             <p>Quand tous les joueurs ont procédé à l'écart, on détermine aléatoirement la couleur du Papayoo.
                 Le Papayoo est toujours la carte 7 de cette couleur et vaut 40 points.</p>

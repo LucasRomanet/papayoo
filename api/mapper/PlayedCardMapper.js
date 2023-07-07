@@ -1,4 +1,4 @@
-const PlayedCardDTO = require('../model/dto/PlayedCardDTO.js');
+const PlayedCardDTO = require('../model/dto/PlayedCardDTO');
 
 function toPlayedCardDTO(playedCard) {
     if (playedCard == null) {

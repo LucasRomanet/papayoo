@@ -1,5 +1,5 @@
-const UserDTO = require('../model/dto/UserDTO.js');
-const LoggedUserDTO = require('../model/dto/LoggedUserDTO.js');
+const UserDTO = require('../model/dto/UserDTO');
+const LoggedUserDTO = require('../model/dto/LoggedUserDTO');
 
 function toUserDTO(user) {
     if (user == null) {

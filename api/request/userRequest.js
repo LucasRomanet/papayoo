@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const User = require('../model/bo/User.js');
-const { toLoggedUserDTO } = require('../mapper/UserMapper.js');
-const { getAllUsers, isUserExist, getOneUser, createUser, isCorrectName, isCorrectTag, isCorrectPassword } = require("../utils/helpers/userHelper");
-const { loggedUsers } = require("../utils/game.js");
-const { PLAYER_DOESNT_EXIST } = require("../utils/errors/messagesConsts");
-const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError");
+const User = require('../model/bo/User');
+const { toLoggedUserDTO } = require('../mapper/UserMapper');
+const { getAllUsers, isUserExist, getOneUser, createUser, isCorrectName, isCorrectTag, isCorrectPassword } = require("../utils/helper/userHelper");
+const { loggedUsers } = require("../utils/helper/gameHelper");
+const { PLAYER_DOESNT_EXIST } = require("../utils/error/messagesConsts");
+const { PapayooError, getErrorMessage } = require("../utils/error/PapayooError");
 
 // this is our get method
 // this method fetches all available data in our database
@@ -61,7 +61,6 @@ router.post('/login',async (req, res) => {
         if (!canLogin(name, tag, password)) {
             return res.status(400).send();
         }
-        const userNameTag = User.nametag({ name, tag });
         const user = await getOneUser({ name, tag }, { '_id': 0, '__v': 0 });
 
         if (!user) {
@@ -81,7 +80,8 @@ router.post('/login',async (req, res) => {
         }
         return res.status(500).send( { message: getErrorMessage('Erreur lors de la connexion du joueur', e) } )
     }
-}); 
+});
+
 
 function createToken(name, tag) {
     return jwt.sign(
@@ -112,25 +112,10 @@ function canCreateUser(name, tag, password) {
     return true;
 }
 
-function canUpdateUser(name, tag, update) {
-    if (!isCorrectName(name)) return false;
-    if (!isCorrectTag(tag)) return false;
-    if ((!update.password && !update.name) || update.tag != null || update._id != null || update.games != null) return false;
-    return true;
-}
-
 function canLogin(name, tag, password) {
     if (!isCorrectName(name)) return false;
     if (!isCorrectTag(tag)) return false;
     if (!isCorrectPassword(password)) return false;
-    return true;
-}
-
-function canUpdateUser(name, tag, password, update) {
-    if (!isCorrectName(name)) return false;
-    if (!isCorrectTag(tag)) return false;
-    if (!isCorrectPassword(password)) return false;
-    if ((!update.password && !update.name) || update.tag != null || update._id != null || update.games != null) return false;
     return true;
 }
 

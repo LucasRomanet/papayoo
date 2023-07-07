@@ -41,10 +41,14 @@ const Discard = () => {
                 {
                 (game.mutual.pool.length < game.mutual.discardSize) ? 
                     `${game.mutual.pool.length}/${game.mutual.discardSize}`:
-                    "Valider la défausse" 
+                    "Valider" 
                 }
             </button>
-            {game.individual.neighbor}
+            <div className="instructions">
+                <div>Défausser pour :</div>
+                <div>{game.individual.neighbor}</div>
+            </div>
+            
             <button
                 class="btn btn-danger"
                 onClick={handleClear}

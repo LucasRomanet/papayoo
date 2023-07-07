@@ -1,12 +1,11 @@
 const sock = require('socket.io');
-const { loggedUsers, currentGame } = require("../utils/game.js");
-const { loadGameSocket } = require("./gameSocket");
-const { notify } = require('../utils/socket.js');
+const { loggedUsers, currentGame } = require("../utils/helper/gameHelper");
+const { subscribeToGameEvents } = require("./game");
+const { leaveGame } = require('../utils/helper/socketHelper');
 const jwt = require('jsonwebtoken');
 
-let io = null;
 
-function initSocket(server){
+function subscribeToSessionEvents(server){
     io = sock(server, {
         cors: {
             origin : "*",
@@ -41,7 +40,7 @@ function initSocket(server){
             
             user.socket = socket;
             socket.user = user;
-            loadGameSocket(socket);
+            subscribeToGameEvents(socket);
         });
 
         socket.on('disconnect', () => {
@@ -50,39 +49,11 @@ function initSocket(server){
                 return;
             }
 
-            const user = socket.user;
-            const userNameTag = user.nametag();
-
-            const gameCode = user.playingGame;
-            user.playingGame = "";
-
+            leaveGame(user);
             delete socket.user;
-
-            // Remove player from the game
-            if (gameCode == null) {
-                return;
-            }
-            const game = currentGame.get(gameCode);
-            if(game == null) {
-                return;
-            }
-
-            if (game.removePlayer(userNameTag)) {
-                if (game.mustPlay == userNameTag) {
-                    game.setNextPlayer();
-                }
-            }
-
-            if(game.players.size === 0) {
-                currentGame.delete(gameCode);
-            }
-
-            loggedUsers.removeUser(user);
-            
-            notify(gameCode);
         });
     });
 }
 
 
-module.exports = {initSocket};
+module.exports = { subscribeToSessionEvents };

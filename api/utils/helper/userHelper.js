@@ -1,10 +1,9 @@
-const User = require("../../model/bo/User");
 const UserModel = require("../../model/database/User");
 
-const { PLAYER_DOESNT_EXIST } = require("../../utils/errors/messagesConsts");
-const { MIN_NAME_LENGTH, MAX_NAME_LENGTH, TAG_MIN, TAG_MAX, TAG_DIGITS } = require("../../utils/const");
+const { PLAYER_DOESNT_EXIST } = require("../error/messagesConsts");
+const { MIN_NAME_LENGTH, MAX_NAME_LENGTH, TAG_MIN, TAG_MAX, TAG_DIGITS } = require("../const");
 
-const { PapayooError, getErrorMessage } = require("../../utils/errors/PapayooError");
+const { PapayooError, getErrorMessage } = require("../error/PapayooError");
 
 async function getAllUsers(filter = {}, sort = {}) {
     try {

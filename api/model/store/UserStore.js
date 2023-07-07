@@ -1,4 +1,4 @@
-const User = require('../bo/User.js');
+const User = require('../bo/User');
 
 class UserStore {
     constructor() {

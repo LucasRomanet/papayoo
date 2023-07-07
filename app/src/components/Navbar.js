@@ -8,9 +8,7 @@ const Navbar = (props) => {
             <div className="navbar-wrapper">
                 <div className="navbar">
                     <h2><Link to="/">Accueil</Link></h2>
-                    {
-                        props.loggedIn && <h2><Link to="/jouer">Jouer en ligne</Link></h2>
-                    }
+                    <h2><Link to="/jouer">Jouer en ligne</Link></h2>
                     <h2><Link to="/classement">Classement</Link></h2>
                     <h2><Link to="/rules">Règles</Link></h2>
                     <h2><Link to="/credit">Crédits</Link></h2>

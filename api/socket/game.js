@@ -1,13 +1,13 @@
 const UserModel = require('../model/database/User');
-const PlayedCard = require('../model/bo/PlayedCard.js');
-const gameStatus = require('../model/enum/GameStatus.js');
-const cardsColors = require('../model/enum/CardsColors.js');
-const { toCardArray } = require('../mapper/CardMapper.js');
-const { currentGame, distributeCard } = require("../utils/game.js");
-const { notify, includeCardId, includeOneCardId, hasColorInHand, discard, shufflePlayer, } = require("../utils/socket.js");
-const { MIN_PLAYER_TO_START } = require('../utils/const.js');
+const PlayedCard = require('../model/bo/PlayedCard');
+const gameStatus = require('../model/enum/GameStatus');
+const cardsColors = require('../model/enum/CardsColors');
+const { toCardArray } = require('../mapper/CardMapper');
+const { currentGame, distributeCard, includeCardId, includeOneCardId, hasColorInHand, shufflePlayer } = require("../utils/helper/gameHelper");
+const { notify, discard, sendRoundResults } = require("../utils/helper/socketHelper");
+const { MIN_PLAYER_TO_START } = require('../utils/const');
 
-function loadGameSocket(socket){
+function subscribeToGameEvents(socket){
 
     socket.on('start', (data)=>{
         /* format awaited:
@@ -207,21 +207,25 @@ function checkWinnerOfRound(game, requiredColor) {
     const losingPlayer = game.players.get(losingCard.userNameTag);
     losingPlayer.addPoints(points);
     
-    setTimeout(() => {
+    //setTimeout(() => {
         game.pool = [];
         
         if (game.players.values().next().value.hand.length >= 1) {
+            sendRoundResults(game.code, losingCard.userNameTag, points);
             startNextRound(game, losingCard.userNameTag);
         } else {
             endGame(game);
         }
-    }, 1300);
+    //}, 1300);
 }
+
 
 function startNextRound(game, userNameTag) {
     game.mustPlay = userNameTag;
     notify(game.code);
 }
+
+
 
 function endGame(game) {
     game.mustPlay = null;
@@ -247,4 +251,4 @@ function endGame(game) {
     currentGame.delete(game.code);
 }
 
-module.exports = {loadGameSocket};
+module.exports = { subscribeToGameEvents };

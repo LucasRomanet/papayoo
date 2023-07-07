@@ -1,9 +1,9 @@
-const MutualGameStateDTO = require('../model/dto/MutualGameStateDTO.js');
-const IndividualGameStateDTO = require('../model/dto/IndividualGameStateDTO.js');
-const GameDTO = require('../model/dto/GameDTO.js');
-const { toCardDTO } = require('./CardMapper.js');
-const { toPlayedCardDTOArray } = require('./PlayedCardMapper.js');
-const { toPlayerDTO } = require('./PlayerMapper.js');
+const MutualGameStateDTO = require('../model/dto/MutualGameStateDTO');
+const IndividualGameStateDTO = require('../model/dto/IndividualGameStateDTO');
+const GameDTO = require('../model/dto/GameDTO');
+const { toCardDTO } = require('./CardMapper');
+const { toPlayedCardDTOArray } = require('./PlayedCardMapper');
+const { toPlayerDTO } = require('./PlayerMapper');
 
 function toGameDTO(game, nametag) {
     if (game == null) {

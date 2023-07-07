@@ -1,6 +1,7 @@
 import { useContext, useState, useEffect } from "react";
 import Pool from "./board/Pool";
 import Hand from "./board/Hand";
+import Results from "./board/Results";
 import Opponents from "./board/Opponents";
 import Discard from "./board/Discard";
 import RequiredColor from "./board/RequiredColor";
@@ -10,7 +11,7 @@ import '../../style/game.css';
 import { byId }  from '../../utils/tools';
 import GameContext from "../../context/game/GameContext";
 
-const Game = () => {
+const Board = ({ roundResults} ) => {
 
     const [playableCard, setPlayableCard] = useState({
         requiredColor: null,
@@ -20,14 +21,12 @@ const Game = () => {
     const { game } = useContext(GameContext);
 
     useEffect(() => {
-        const last = game.mutual.pool.slice(-1);
-        if (!last.length) {
-            return;
-        }
-
         let color = null;
-        if (game.mutual.pool.length < game.mutual.players.length && !game.mutual.discarding) {
-            color = game.mutual.pool[0].color;
+
+        if (!game.mutual.discarding) {
+            if (game.mutual.pool.length > 0) {
+                color = game.mutual.pool[0].color;
+            }
         }
 
         setPlayableCard({
@@ -36,7 +35,7 @@ const Game = () => {
         });
 
     }, [game]);
-    
+
 
     const isColorInHand = (color) => {
         for (const card of game.individual.hand) {
@@ -45,17 +44,21 @@ const Game = () => {
         return false;
     }
 
+    
 
-
+    const header = document.getElementsByClassName("header-wrapper")[0];
+    if (header) header.style.display = "none";
     return (
         <div>
             <Opponents />
 
             <div className="game-info-wrapper">
                 {
-                    game.mutual.discarding 
+                    game.mutual.discarding
                         ? <Discard />
-                        : <RequiredColor color={playableCard.requiredColor} />
+                        : roundResults != null
+                            ? <Results roundResults={roundResults}/>
+                            : <RequiredColor color={playableCard.requiredColor} />
                 }
                 {
                     game.mutual.cursedCard && <CursedCard color={game.mutual.cursedCard.color} />
@@ -76,4 +79,4 @@ const Game = () => {
     );
 }
 
-export default Game;
+export default Board;

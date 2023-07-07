@@ -1,5 +1,5 @@
-const Player = require('./Player.js');
-const gameStatus = require('../enum/GameStatus.js');
+const Player = require('./Player');
+const gameStatus = require('../enum/GameStatus');
 
 class Game {
     constructor(code) {

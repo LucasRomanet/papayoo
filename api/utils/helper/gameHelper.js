@@ -1,11 +1,11 @@
-const cardsColors = require('../model/enum/CardsColors.js');
-const Card = require('../model/bo/Card.js');
-const UserStore = require('../model/store/UserStore.js');
+const cardsColors = require('../../model/enum/CardsColors');
+const Card = require('../../model/bo/Card');
+const UserStore = require('../../model/store/UserStore');
 
 let currentGame = new Map();
 const loggedUsers = new UserStore();
 
-function nametag({name, tag}){
+function nametag({ name, tag }){
     return name + '#' + tag;
 }
 
@@ -72,4 +72,54 @@ function shuffle(a) {
     return a;
 }
 
-module.exports = { currentGame, loggedUsers, distributeCard, initCards, nametag, createJoinCode, shuffle };
+
+function includeCardId(id, cards){
+    for(let card of cards.values()){
+        if(card.id == id){
+            return true;
+        }
+    }
+    return false;
+}
+
+function includeOneCardId(id, item){
+    return id != item.id;
+}
+
+function includeCardColor(card, color){
+    if(card.color == color){
+        return true;
+    }
+    return false;
+}
+
+function hasColorInHand(color, hand){
+    for (const card of hand) {
+        if(card.color == color){
+            return true;
+        }
+    }
+    return false;
+}
+
+
+function shufflePlayer(game) {
+    let newMapKeys = new Array();
+    let newMapValues = new Map();
+    for (let playerNameTag of game.players.keys()){
+        newMapKeys.push(playerNameTag);
+        newMapValues.set(playerNameTag, game.players.get(playerNameTag));
+    }
+    newMapKeys = shuffle(newMapKeys);
+    game.players = new Map();
+    let previous = newMapKeys.at(-1);
+    for (let playerNameTag of newMapKeys){
+        let player = newMapValues.get(playerNameTag);
+        player.points = 0;
+        player.neighbor = previous;
+        game.players.set(playerNameTag, player);
+        previous = playerNameTag;
+    }
+}
+
+module.exports = { currentGame, loggedUsers, distributeCard, initCards, nametag, createJoinCode, shuffle, includeCardColor, includeCardId, includeOneCardId, hasColorInHand, shufflePlayer };

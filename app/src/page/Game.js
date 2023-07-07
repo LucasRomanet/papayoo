@@ -1,15 +1,23 @@
 import { useContext, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { joinGame } from "../endpoint";
+import { useNavigate } from "react-router-dom";
 import Chat from "../components/game/Chat";
 import Lobby from "../components/game/Lobby";
 import Board from "../components/game/Board";
 import End from "../components/game/End";
 import UserContext from "../context/user/UserContext";
 import GameContext from "../context/game/GameContext";
+import { END_ROUND_DELAY } from "../utils/consts";
+
+import { joinGame } from "../endpoint";
+import { leaveGame } from "../endpoint";
+
 
 const Game = () => {
+    const navigate = useNavigate();
+
     const [code, setCode] = useState(null);
+    const [roundResults, setRoundResults] = useState(null);
 
     const { user } = useContext(UserContext);
     const { game, setGame } = useContext(GameContext);
@@ -17,17 +25,28 @@ const Game = () => {
     const params = useParams();
     // Réduire l'accès à certaines page aux joueurs connecté
     useEffect(() => {
+
         function onNotify(gameDTO) {
             setGame(JSON.parse(gameDTO));
         }
 
+        function onResults(results) {
+            setRoundResults(JSON.parse(results));
+            setTimeout(() => {
+                setRoundResults(null);
+            }, END_ROUND_DELAY)
+        }
+        
         setCode(params.code);
 
         user.socket.on('notify', onNotify);
+        user.socket.on('results', onResults);
 
         return () => {
             user.socket.off('notify', onNotify);
+            user.socket.off('results', onResults);
         }
+
         
     }, []);
 
@@ -63,6 +82,11 @@ const Game = () => {
         });
     }, [code]);
 
+    const leave = () => {
+        leaveGame(user.token);
+        navigate('/');
+    }
+
     // Au lancement : récupère la partie à partir du code (url)
     //      -> si code invalide => go to accueil
     // Sinon, etat partie :
@@ -77,12 +101,16 @@ const Game = () => {
 
     return (
         <div className="game-wrapper">
+            
             {(!game) 
                 ? <p>Loading</p>
                 : (
                     <div>
+                        <button onClick={leave} className="btn btn-danger">
+                            Quitter
+                        </button>
                         {(game.mutual.status === "WAITING") && <Lobby />}
-                        {(game.mutual.status === "PLAYING") && <Board />}
+                        {(game.mutual.status === "PLAYING") && <Board roundResults={roundResults} />}
                         {(game.mutual.status === "ENDING") && <End />}
                         <Chat />
                     </div>

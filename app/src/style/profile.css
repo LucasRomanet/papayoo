@@ -6,22 +6,15 @@
     left: 5px;
 }
 .profile-card {
-    padding: 3px;
-    max-width: 150px;
+    padding: 5px;
 }
 .profile-card button {
     font-family: 'Baloo Paaji', sans-serif;
-    font-size: 1.2em;
+    font-size: 1em;
     font-weight: 900;
     width: 100%;
-    border: none;
-    border-radius: 20px!important;
+
     margin-top: 0.8em;
-    background-color: #24b2ff;
-    box-shadow: 3px 3px 0 #1519e1;
-    transition: 0.2s all;
+
 }
-.profile-card button:hover {
-    background-color: #1519e1;
-    box-shadow: 3px 3px 0 #24b2ff;
-}
+

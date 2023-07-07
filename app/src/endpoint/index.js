@@ -29,3 +29,11 @@ export const joinGame = (code, token) => {
         }
     });
 }
+
+export const leaveGame = (token) => {
+    return axios.post(Domain.getAPI() + '/game/leave', null, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+}

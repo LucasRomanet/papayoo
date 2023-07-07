@@ -2,19 +2,20 @@ const express = require('express');
 
 const { PLAYER_DOESNT_EXIST, PLAYER_IN_GAME, PLAYER_NOT_ONLINE,
     PLAYER_IN_OTHER_GAME, GAME_CODE_UNKNOWN,
-    GAME_IS_FULL, GAME_IS_ALREADY_STARTED, PLAYER_ALREADY_IN_GAME } = require("../utils/errors/messagesConsts");
+    GAME_IS_FULL, GAME_IS_ALREADY_STARTED, PLAYER_ALREADY_IN_GAME } = require("../utils/error/messagesConsts");
 
-const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError");
-const { isCorrectName, isCorrectTag } = require("../utils/helpers/userHelper");
+const { PapayooError, getErrorMessage } = require("../utils/error/PapayooError");
 const router = express.Router();
 const { loggedUserMiddleware } = require('./loggedUserMiddleware');
 
-const Game = require('../model/bo/Game.js');
+const Game = require('../model/bo/Game');
 
-const gameStatus = require('../model/enum/GameStatus.js');
-const { toGameDTO } = require('../mapper/GameMapper.js');
-const { currentGame, loggedUsers, createJoinCode } = require("../utils/game.js");
-const { notify } = require('../utils/socket.js');
+const gameStatus = require('../model/enum/GameStatus');
+const { toGameDTO } = require('../mapper/GameMapper');
+const { currentGame, createJoinCode } = require("../utils/helper/gameHelper");
+const { notify, leaveGame } = require('../utils/helper/socketHelper');
+const { nametag } = require('../model/bo/User');
+const { loggedUsers } = require("../utils/helper/gameHelper");
 
 
 router.post('/', loggedUserMiddleware, (req, res) => {
@@ -66,9 +67,28 @@ router.post('/:gameCode', loggedUserMiddleware, (req, res) => {
     }
 });
 
-function canCreateGame(user) {
-    const userNameTag = user.nametag();
 
+router.post('/leave', loggedUserMiddleware, async (req, res) => {
+    /* json format awaited:
+    {}
+    */
+    try {
+        const user = loggedUsers.get(nametag(req.user.name, req.user.tag));
+
+        if (!user) {
+            throw new PapayooError(PLAYER_DOESNT_EXIST);
+        }
+
+        leaveGame(user);
+    } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+            console.error(e);
+        }
+        return res.status(500).send( { message: getErrorMessage('Erreur lors de la connexion du joueur', e) } )
+    }
+}); 
+
+function canCreateGame(user) {
     if (user.socket == null) {
         throw new PapayooError(PLAYER_NOT_ONLINE);
     }
