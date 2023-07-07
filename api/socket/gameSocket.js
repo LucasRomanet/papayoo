@@ -1,7 +1,10 @@
-const sock = require('socket.io');
-const UserModel = require('../model/User');
-const { userToSocket, currentUser, currentGame, gameStatus, distributeCard, nametag, PlayedCard, cardsColors } = require("../utils/game.js");
-const { notify, includeCardColor, includeCardId, includeOneCardId, discard, shufflePlayer, } = require("../utils/socket.js");
+const UserModel = require('../model/database/User');
+const PlayedCard = require('../model/bo/PlayedCard.js');
+const gameStatus = require('../model/enum/GameStatus.js');
+const cardsColors = require('../model/enum/CardsColors.js');
+const { toCardArray } = require('../mapper/CardMapper.js');
+const { currentGame, distributeCard } = require("../utils/game.js");
+const { notify, includeCardId, includeOneCardId, hasColorInHand, discard, shufflePlayer, } = require("../utils/socket.js");
 const { MIN_PLAYER_TO_START } = require('../utils/const.js');
 
 function loadGameSocket(socket){
@@ -23,7 +26,7 @@ function loadGameSocket(socket){
         }
 
         const hostNameTag = game.getHost().nametag;
-        if (hostNameTag == nametag(user) && game.players.size >= MIN_PLAYER_TO_START) {
+        if (hostNameTag == user.nametag() && game.players.size >= MIN_PLAYER_TO_START) {
             game.status = gameStatus.PLAYING;
             distributeCard(game);
             shufflePlayer(game);
@@ -52,14 +55,14 @@ function loadGameSocket(socket){
         if (user == null) {
             return;
         }
-        
+
         const { gameCode, cards } = data;
         const game = currentGame.get(gameCode);
         if (game == null) {
             return;
         }
 
-        const player = game.players.get(nametag(user));
+        const player = game.players.get(user.nametag());
         if (player == null) {
             return;
         }
@@ -75,14 +78,13 @@ function loadGameSocket(socket){
         if (!game.discarding || player.hasDiscarded() || cards.length != nbToBeDiscarded) {
             return;
         }
-
-        for (let card in cards){
+        for (const card of cards){
             if (!includeCardId(card.id, player.hand)){
                 return;
             }
         }
 
-        player.discardPile = cards;
+        player.discardPile = toCardArray(cards);
         player.hand = player.hand.filter(card => !includeCardId(card.id, cards));
 
         for (let playerToBeChecked of game.players.values()) {
@@ -115,16 +117,16 @@ function loadGameSocket(socket){
             return;
         }
         
-        const player = game.players.get(nametag(user));
-        if (player == null) {
+        const player = game.players.get(user.nametag());
+        if (player == null || game.pool.filter(playedCard => playedCard.userNameTag === user.nametag()).length > 0) {
             return;
         }
 
-        let askedColor;
+        let requiredColor;
         if (game.pool.length < 1){
-            askedColor = card.color;
+            requiredColor = card.color;
         } else {
-            askedColor = game.pool[0].color;
+            requiredColor = game.pool[0].color;
         }
 
         // Check if it's the player's turn
@@ -132,20 +134,22 @@ function loadGameSocket(socket){
             return;
         }
 
-        // Check if the player can play this card
-        const hasColorInHand = player.hand.filter(item => includeCardColor(item, askedColor)).length > 0;
-        const canPlayThisCard = includeCardId(card.id, player.hand) && hasColorInHand && card.color == askedColor
+        const hasThisCard = includeCardId(card.id, player.hand);
+        if (!hasThisCard) {
+            return;
+        }
+        const canPlayThisCard = card.color == requiredColor || !hasColorInHand(requiredColor, player.hand);
         if (!canPlayThisCard) {
             return;
         }
 
         // Stack to the pile of played cards
-        const playedCard = new PlayedCard(card.id, card.number, card.color, nametag(user));
+        const playedCard = new PlayedCard(card.id, card.number, card.color, user.nametag());
         game.pool.push(playedCard);
         player.hand = player.hand.filter(item => includeOneCardId(playedCard.id, item));
         
         if (game.pool.length >= game.players.size) {
-            checkWinnerOfRound(game, askedColor);
+            checkWinnerOfRound(game, requiredColor);
         } else {
             game.setNextPlayer();
         }
@@ -174,47 +178,39 @@ function loadGameSocket(socket){
             return;
         }
 
-        const jsonMessage = JSON.stringify({ userNameTag: nametag(user), text: text });
+        const jsonMessage = JSON.stringify({ userNameTag: user.nametag(), text: text });
         for (const someone of game.getPlayersAndSpectators().values()){
-            userToSocket.get(someone.nametag()).socket.emit("message", jsonMessage);
+            someone.user.socket.emit("message", jsonMessage);
         }
     });
 
 }
 
-function checkWinnerOfRound(game, askedColor) {
-    
-    // Retrieve the losing card
-    let losingCard = null;
-    game.pool.filter(item => includeCardColor(item, askedColor))
-        .forEach(card => {
-            if (losingCard == null || card.number > losingCard.number){
-                losingCard = card;
-            }
-        });
-    
-    // Update points of players
-    for (let player of game.players.values()) {
-        if (player.nametag() != losingCard.userNameTag) {
-            return;
+function checkWinnerOfRound(game, requiredColor) {
+
+    let losingCard = game.pool[0];
+    let points = 0;
+
+    for (const card of game.pool) {
+        if (card.color === requiredColor && card.number > losingCard.number) {
+            losingCard = card;
         }
 
-        // Count the points of player
-        let points = 0;
-        if (includeCardId(game.cursedCard.id, game.pool)){
+        if (card.color === cardsColors.PAYOO) {
+            points += card.number;
+        }
+        else if (card.id === game.cursedCard.id) {
             points += 40;
         }
-
-        game.pool.filter(item => includeCardColor(item, cardsColors.PAYOO))
-            .forEach(element => points += element.number);
-        
-        // Add the points
-        player.addPoints(points);
     }
 
-    game.mustPlay = null;
+    const losingPlayer = game.players.get(losingCard.userNameTag);
+    losingPlayer.addPoints(points);
+    
     setTimeout(() => {
-        if (player.hand.length >= 1) {
+        game.pool = [];
+        
+        if (game.players.values().next().value.hand.length >= 1) {
             startNextRound(game, losingCard.userNameTag);
         } else {
             endGame(game);
@@ -228,36 +224,25 @@ function startNextRound(game, userNameTag) {
 }
 
 function endGame(game) {
+    game.mustPlay = null;
     game.pool = new Array();
     game.status = gameStatus.ENDING;
 
-    // Update score of players
+    // Store player score
     for (let player of game.players.values()){
-        UserModel.find({name : player.user.name, tag: player.user.tag}, {'_id': 0, '__v': 0, 'password': 0})
-            .exec((err, data) => {
-                if (err || !data.length){
-                    return;
-                } else {
-                    return UserModel.updateOne({
-                        name: player.user.name, 
-                        tag: player.user.tag
-                    },
-                    {
-                        score: parseInt(data[0].score) + player.points,
-                        games: parseInt(data[0].games) + 1
-                    }, (err) => {
-                        if (err) {
-                            return;
-                        }
-                    });
-                }
-            });
+        UserModel.findOneAndUpdate(
+            { name: player.user.name, tag: player.user.tag },
+            {
+                $inc: { score: player.points },
+                $inc: { games: 1 }
+            }
+        );
     }
 
     // End the game
     notify(game.code);
-    for (const user of game.getPlayersAndSpectators().values()){
-        currentUser.get(nametag(user)).playingGame = "";
+    for (const user of game.getPlayersAndSpectators().values()) {
+        user.playingGame = "";
     }
     currentGame.delete(game.code);
 }

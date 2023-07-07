@@ -2,13 +2,11 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { LoggedUserDTO } = require('../utils/game.js');
-
-const { getAllUsers, isUserExist, getOneUser, createUser, isCorrectName, isCorrectTag, isCorrectPassword } = require("../model/helpers/userHelper");
-
-const { currentUser, userToSocket, User, nametag } = require("../utils/game.js");
-
-const { PLAYER_DOESNT_EXIST, PLAYER_IS_IN_GAME } = require("../utils/errors/messagesConsts");
+const User = require('../model/bo/User.js');
+const { toLoggedUserDTO } = require('../mapper/UserMapper.js');
+const { getAllUsers, isUserExist, getOneUser, createUser, isCorrectName, isCorrectTag, isCorrectPassword } = require("../utils/helpers/userHelper");
+const { loggedUsers } = require("../utils/game.js");
+const { PLAYER_DOESNT_EXIST } = require("../utils/errors/messagesConsts");
 const { PapayooError, getErrorMessage } = require("../utils/errors/PapayooError");
 
 // this is our get method
@@ -18,6 +16,9 @@ router.get('/', async (req, res) => {
         const users = await getAllUsers();
         return res.json(users);
     } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+            console.error(e);
+        }
         return res.status(500).json( { message: getErrorMessage('Erreur lors de la récupération des joueurs', e) } )
     }
 });
@@ -37,12 +38,11 @@ router.post('/register', async (req, res) => {
 
         const createdUser = await createUser({ name, tag, password }, { '_id': 0, '__v': 0, 'password': 0 });
 
-        const createdUserNametag = nametag(createdUser);
-
-        currentUser.set(createdUserNametag, new User(createdUser.name, createdUser.tag, createdUser.games, createdUser.score))
-
         return res.json(logUser(createdUser));
     } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+            console.error(e);
+        }
         return res.status(500).json( { message: getErrorMessage('Erreur lors de la création du joueur', e) } )
     }
 });
@@ -61,26 +61,24 @@ router.post('/login',async (req, res) => {
         if (!canLogin(name, tag, password)) {
             return res.status(400).send();
         }
-        const userNameTag = nametag({ name, tag });
+        const userNameTag = User.nametag({ name, tag });
         const user = await getOneUser({ name, tag }, { '_id': 0, '__v': 0 });
 
         if (!user) {
             throw new PapayooError(PLAYER_DOESNT_EXIST);
         }
 
-        if (userToSocket.has(userNameTag)) {
-            userToSocket.delete(userNameTag);
-        }
-        
-        currentUser.set(userNameTag, new User(user.name, user.tag, user.games, user.score));
-
         const correctPassword = await bcrypt.compare(password, user.password);
         if (!correctPassword) {
             throw new PapayooError('Mot de passe incorrect');
         }
+
         // Return the logged user
         return res.json(logUser(user));
     } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+            console.error(e);
+        }
         return res.status(500).send( { message: getErrorMessage('Erreur lors de la connexion du joueur', e) } )
     }
 }); 
@@ -99,10 +97,12 @@ function createToken(name, tag) {
 function logUser(user) {
     const token = createToken(user.name, user.tag);
 
-    const userNameTag = nametag({ name: user.name, tag: user.tag });
-    userToSocket.set(userNameTag, { token });
+    const storedUser = new User(token, user.name, user.tag, user.games, user.score);
+    if (!loggedUsers.addUser(storedUser)) {
+        throw new PapayooError('Vous êtes déjà connecté');
+    }
 
-    return new LoggedUserDTO(token, user.name, user.tag, user.games, user.score);
+    return toLoggedUserDTO(storedUser);
 }
 
 function canCreateUser(name, tag, password) {

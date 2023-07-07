@@ -1,7 +1,7 @@
 // /backend/data.js
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const { MIN_NAME_LENGTH, MAX_NAME_LENGTH } = require("../utils/const");
+const { MIN_NAME_LENGTH, MAX_NAME_LENGTH } = require("../../utils/const");
 const Schema = mongoose.Schema;
 
 // this will be our data base's data structure

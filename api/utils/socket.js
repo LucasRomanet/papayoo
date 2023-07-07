@@ -1,46 +1,37 @@
 
-const { userToSocket, currentGame, shuffle, toGameDTO, Card, cardsColors } = require("../utils/game.js");
+const Card = require('../model/bo/Card.js');
+const cardsColors = require('../model/enum/CardsColors.js');
+const { toGameDTO } = require('../mapper/GameMapper.js');
+const { currentGame, shuffle } = require("../utils/game.js");
 
 function notify(gameCode){
-
     let game = currentGame.get(gameCode);
     if (!game)
         return;
 
-    for (const userNameTag of game.getPlayersAndSpectators().keys()){
-        const userSocket = userToSocket.get(userNameTag);
-
-        if (userSocket == null || userSocket.socket == null)
+    for (const player of game.getPlayersAndSpectators().values()){
+        if (player.user.socket == null) {
             continue;
-
-        const gameDTO = toGameDTO(game, userNameTag);
+        }
+        const gameDTO = toGameDTO(game, player.nametag());
         
         // Send game information
-        userSocket.socket.emit("notify", JSON.stringify(gameDTO));
+        player.user.socket.emit("notify", JSON.stringify(gameDTO));
     }
 }
 
 function discard(game) {
-    // Manual first iteration
-    const playersIterable = game.players.values();
-    const firstPlayer = playersIterable.next().value;
-    let previousPlayer = firstPlayer;
 
-    // Iterate through every player except the first
-    for (let player of playersIterable) {
-        player.hand = player.hand.concat(previousPlayer.discardPile);
-        previousPlayer.discardPile = [];
-        previousPlayer = player;
+    // Pass discarded cards to the correct neighboring player
+    for (let player of game.players.values()) {
+        const neighbor = game.players.get(player.neighbor);
+        player.hand = player.hand.concat(neighbor.discardPile);
+        neighbor.discardPile = [];
     }
 
-    // Last player of the iteration gives cards to first player
-    firstPlayer.hand = firstPlayer.hand.concat(previousPlayer.discardPile); 
-    previousPlayer.discardPile = [];
-    
     // Update the game
     game.discarding = false;
     game.mustPlay = game.players.values().next().value.nametag();
-    
 
     // Select random cursedCard
     const availableColors = Object.values(cardsColors).filter(color => color !== cardsColors.PAYOO);
@@ -53,7 +44,7 @@ function discard(game) {
 
 function includeCardId(id, cards){
     for(let card of cards.values()){
-        if(card.id === id){
+        if(card.id == id){
             return true;
         }
     }
@@ -71,6 +62,16 @@ function includeCardColor(card, color){
     return false;
 }
 
+function hasColorInHand(color, hand){
+    for (const card of hand) {
+        if(card.color == color){
+            return true;
+        }
+    }
+    return false;
+}
+
+
 function shufflePlayer(game) {
     let newMapKeys = new Array();
     let newMapValues = new Map();
@@ -80,11 +81,14 @@ function shufflePlayer(game) {
     }
     newMapKeys = shuffle(newMapKeys);
     game.players = new Map();
+    let previous = newMapKeys.at(-1);
     for (let playerNameTag of newMapKeys){
         let player = newMapValues.get(playerNameTag);
         player.points = 0;
+        player.neighbor = previous;
         game.players.set(playerNameTag, player);
+        previous = playerNameTag;
     }
 }
 
-module.exports = {notify, includeCardColor, includeCardId, includeOneCardId, discard, shufflePlayer};
+module.exports = {notify, includeCardColor, includeCardId, includeOneCardId, hasColorInHand, discard, shufflePlayer};

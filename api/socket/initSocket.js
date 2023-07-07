@@ -1,12 +1,10 @@
 const sock = require('socket.io');
-const bcrypt = require('bcrypt');
-const { userToSocket, nametag, currentUser, currentGame } = require("../utils/game.js");
-const {loadGameSocket} = require("./gameSocket");
+const { loggedUsers, currentGame } = require("../utils/game.js");
+const { loadGameSocket } = require("./gameSocket");
 const { notify } = require('../utils/socket.js');
 const jwt = require('jsonwebtoken');
 
 let io = null;
-
 
 function initSocket(server){
     io = sock(server, {
@@ -36,33 +34,28 @@ function initSocket(server){
                 return;
             }
 
-            const userNameTag = nametag(decoded);
-            if(!currentUser.has(userNameTag) || !userToSocket.has(userNameTag) || userToSocket.get(userNameTag).token !== data.token){
+            const user = loggedUsers.getUser(decoded.name, decoded.tag, data.token);
+            if (user == null || user.socket != null){
                 return;
             }
-            const user = currentUser.get(userNameTag);
-
-            userToSocket.delete(userNameTag);
-            userToSocket.set(userNameTag, {socket: socket, token: data.token, user});
-            socket.token = data.token;
+            
+            user.socket = socket;
             socket.user = user;
             loadGameSocket(socket);
         });
 
         socket.on('disconnect', () => {
             /* format awaited: null */
-            if (!socket.token || socket.user == null) {
+            if (socket.user == null) {
                 return;
             }
-            
+
             const user = socket.user;
-            const userNameTag = nametag(user);
-            
+            const userNameTag = user.nametag();
+
             const gameCode = user.playingGame;
             user.playingGame = "";
-            userToSocket.delete(userNameTag);
 
-            delete socket.token;
             delete socket.user;
 
             // Remove player from the game
@@ -83,6 +76,8 @@ function initSocket(server){
             if(game.players.size === 0) {
                 currentGame.delete(gameCode);
             }
+
+            loggedUsers.removeUser(user);
             
             notify(gameCode);
         });

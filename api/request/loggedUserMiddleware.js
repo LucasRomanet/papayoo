@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { LOGIN_REQUIRED, INCORRECT_TOKEN } = require('../utils/errors/messagesConsts');
 const { PapayooError } = require('../utils/errors/PapayooError');
-const { userToSocket, nametag } = require("../utils/game.js");
+const { loggedUsers } = require("../utils/game");
 
 function loggedUserMiddleware(req, res, next) {
     const authorization = req.header('Authorization');
@@ -27,14 +27,14 @@ function loggedUserMiddleware(req, res, next) {
         return res.status(500).send( { message: INCORRECT_TOKEN });
     }
 
-    const userNameTag = nametag({ name, tag });
-    if (token !== userToSocket.get(userNameTag).token) {
+    const user = loggedUsers.getUser(name, tag, token);
+    if (user == null) {
         return res.status(500).send( { message: INCORRECT_TOKEN });
     }
 
     // TODO Vérifier que l'utilisateur existe en BDD
 
-    req.user = { name, tag };
+    req.user = user;
     next();
 }
 
