@@ -1,10 +1,21 @@
-import { useContext } from "react";
-import GameContext from "../../../context/game/GameContext.js";
-import { nametag }  from '../../../utils/tools.js';
+import { useContext, useState } from "react";
+import GameContext from "../../../context/game/GameContext";
+import { nametag }  from '../../../utils/tools';
+import Stats from "../../Stats"
 
-const Opponents = ({ handleModalStatsOpen }) => {
+const Opponents = () => {
+
+    const [userStats, setUserStats] = useState({});
+    const [isStatModalOpen, setStatModalOpen] = useState(false);
 
     const { game } = useContext(GameContext);
+
+    const handleModalStatsOpen = (id) => {
+        if(id != null) {
+            setUserStats(game.mutual.players[id].user);
+        }
+        setStatModalOpen(!isStatModalOpen);
+    }
 
     const getPoints = (index) => {
         let player = game.mutual.players[index];
@@ -14,10 +25,7 @@ const Opponents = ({ handleModalStatsOpen }) => {
         return 0;
     }
 
-    
-
-    return <div className="information">
-        <div className="opponent-wrapper">
+    return <div className="opponent-wrapper">
             {
                 game.mutual.players.map((player, index) =>
                     <div className={[(nametag(player.user) === game.mutual.mustPlay) ? "must-play":"", "player-wrapper"].join(' ')} >
@@ -28,10 +36,15 @@ const Opponents = ({ handleModalStatsOpen }) => {
                             <p>Points : {getPoints(index)}</p>
                         </div>
                     </div>
+                    
                 )
             }
+            <Stats
+                isModalOpen={isStatModalOpen}
+                toggleModal={handleModalStatsOpen}
+                user={userStats}
+            />
         </div>
-    </div>;
 };
 
 export default Opponents;

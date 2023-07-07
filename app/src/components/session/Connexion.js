@@ -4,7 +4,7 @@ import UserContext from "../../context/user/UserContext";
 import UserForm from './UserForm';
 import Modal from 'react-bootstrap/Modal';
 
-import { login } from "../../api";
+import { login } from "../../endpoint";
 
 const Connexion = (props) => {
     

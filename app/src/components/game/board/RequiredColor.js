@@ -1,8 +1,8 @@
-const RequiredColor = ({ askedColor }) => {
+const RequiredColor = ({ color }) => {
     return (
         <div>
             Couleur demandée:
-            <div className={[(askedColor) ? askedColor : "indefini", "playable"].join(' ')}>
+            <div className={[(color) ? color : "indefini", "playable"].join(' ')}>
                 ‎
             </div>
         </div>

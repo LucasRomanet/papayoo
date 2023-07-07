@@ -1,0 +1,8 @@
+.rules-wrapper table  {
+    text-align: center; 
+    vertical-align: middle;
+    border: 1px solid;
+}
+.rules-wrapper thead {
+    border: 1px solid;
+}

@@ -5,7 +5,7 @@ import UserForm from './UserForm';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Modal from 'react-bootstrap/Modal';
 
-import {register} from '../../api';
+import { register } from '../../endpoint';
 
 
 const Inscription = (props) => {

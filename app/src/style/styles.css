@@ -43,7 +43,7 @@ button[disabled], button[disabled]:hover {
     background-color: gray;
 }
 
-.accueil-wrapper, .rules-wrapper, .classement-wrapper, .contact-wrapper {
+.accueil-wrapper, .rules-wrapper, .ranking-wrapper, .contact-wrapper {
     background-color: #1e2a38;
     color: white;
     text-align: left;
@@ -62,7 +62,7 @@ button[disabled], button[disabled]:hover {
 .chat-wrapper {
     color: black;
 }
-.opponent-wrapper, .pool-wrapper, .hand-wrapper, .player-wrapper, .table-wrapper, .game-wrapper, .end-wrapper, .jouer-wrapper {
+.opponent-wrapper, .pool-wrapper, .hand-wrapper, .player-wrapper, .table-wrapper, .game-wrapper, .end-wrapper, .play-wrapper {
     color: white;
 }
 .js-copytextarea {

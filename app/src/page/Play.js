@@ -1,10 +1,10 @@
 import { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import '../style/jouer.css';
+import '../style/play.css';
 import UserContext from "../context/user/UserContext";
-import { createGame } from "../api";
+import { createGame } from "../endpoint";
 
-const Jouer = () => {
+const Play = () => {
     
     const [code, setCode] = useState(null);
 
@@ -28,7 +28,7 @@ const Jouer = () => {
         navigate(`/partie/${code.toUpperCase()}`);
     }
     
-    const handleCreate = (event) => {
+    const handleCreate = () => {
         createGame(user.token)
         .then(response => {
             handleSubmit(response.data);
@@ -39,7 +39,7 @@ const Jouer = () => {
         });
         
     }
-    const handleJoin = (event) => {
+    const handleJoin = () => {
         if (code) handleSubmit(code)
     }
     const enterFunction = (event) => {
@@ -49,8 +49,8 @@ const Jouer = () => {
     }
     
     return (
-        <div className="jouer-wrapper">
-            <div className="jouer-form">
+        <div className="play-wrapper">
+            <div className="play-form">
                 <div className="divHolder">
                 <button class="btn btn-primary" onClick={handleCreate}>Créer une partie</button>
                 </div>
@@ -60,7 +60,7 @@ const Jouer = () => {
                 <div className="divHolder" >
                     <div class="form-inline">
                         <div className="blank">&#8203;</div>
-                    <input class="form-control" type="text" placeholder="Code de Partie" autoFocus value={code} onChange={handleChangeCode} onKeyPress={enterFunction} />
+                    <input class="form-control" type="text" placeholder="Code de Partie" autoFocus value={code} onChange={handleChangeCode} onKeyDown={enterFunction} />
 
                     <button class="btn btn-warning" onClick={handleJoin}>Rejoindre</button>
                     </div>
@@ -70,4 +70,4 @@ const Jouer = () => {
     );
 }
 
-export default Jouer;
+export default Play;

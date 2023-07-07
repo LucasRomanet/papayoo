@@ -53,12 +53,12 @@
     flex-direction: row;
     justify-content: space-around;
 }
-.table-wrapper {
+.game-info-wrapper {
     display: flex;
     flex-direction: row;
     justify-content: center;
 }
-.table-wrapper > * {
+.game-info-wrapper > * {
     margin: 0 20px;
 }
 .maudite, .playable {

@@ -1,9 +1,5 @@
-import React, { Component } from "react";
-
-
-class Accueil extends Component {
-  render() {
-    return (
+const Home = () => {
+  return (
         <div className="accueil-wrapper">
             <h1>Jouez à Papayoo en ligne.</h1>
             <h3>Sans téléchargement, directement depuis votre navigateur. Avec vos amis</h3>
@@ -19,7 +15,6 @@ class Accueil extends Component {
             Éditeur: <a href="https://www.gigamic.com/">Gigamic</a> (2010)
         </div>
     );
-  }
 }
 
-export default Accueil;
+export default Home;

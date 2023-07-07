@@ -1,10 +1,10 @@
 import { useContext, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { joinGame } from "../api";
-import Chat from "../components/game/Chat.js";
-import Lobby from "../components/game/Lobby.js";
-import Board from "../components/game/Board.js";
-import End from "../components/game/End.js";
+import { joinGame } from "../endpoint";
+import Chat from "../components/game/Chat";
+import Lobby from "../components/game/Lobby";
+import Board from "../components/game/Board";
+import End from "../components/game/End";
 import UserContext from "../context/user/UserContext";
 import GameContext from "../context/game/GameContext";
 
@@ -18,7 +18,6 @@ const Game = () => {
     // Réduire l'accès à certaines page aux joueurs connecté
     useEffect(() => {
         function onNotify(gameDTO) {
-            console.log(JSON.parse(gameDTO));
             setGame(JSON.parse(gameDTO));
         }
 

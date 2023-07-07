@@ -5,15 +5,16 @@ import {
 } from "react-router-dom";
 
 import Header from "./components/Header";
-import Accueil from "./page/Accueil";
+import Home from "./page/Home";
 import Rules from "./page/Rules";
-import Contact from "./page/Contact";
-import Jouer from "./page/Jouer";
+import Credit from "./page/Credit";
+import Play from "./page/Play";
 import Game from './page/Game';
-import Classement from './page/Classement';
+import Ranking from './page/Ranking';
 import NotFoundPage from './components/error/404';
 import GameProvider from './context/game/GameProvider'
 import UserProvider from './context/user/UserProvider'
+import DroppableProvider from './context/droppable/DroppableProvider'
 
 function App() {
     return (
@@ -22,12 +23,16 @@ function App() {
                 <Router basename={process.env.REACT_APP_BASE}>
                     <Header/>
                     <Routes>
-                        <Route path="/contact" element={<Contact/>}/>
-                        <Route path="/partie/:code" element={<Game/>}/>
+                        <Route path="/credit" element={<Credit/>}/>
+                        <Route path="/partie/:code" element={
+                            <DroppableProvider>
+                                <Game/>
+                            </DroppableProvider>
+                        }/>
                         <Route path="/rules" element={<Rules/>}/>
-                        <Route path="/jouer" element={<Jouer/>}/>
-                        <Route path="/classement" element={<Classement/>}/>
-                        <Route path="/" element={<Accueil/>}/>
+                        <Route path="/jouer" element={<Play/>}/>
+                        <Route path="/classement" element={<Ranking/>}/>
+                        <Route path="/" element={<Home/>}/>
                         <Route element={<NotFoundPage/>}/>
                     </Routes>
                 </Router>

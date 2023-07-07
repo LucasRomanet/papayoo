@@ -3,7 +3,7 @@ import Connexion from "../components/session/Connexion";
 import Inscription from "../components/session/Inscription";
 import Stats from "./Stats"
 import UserContext from "../context/user/UserContext";
-import Navbar from "./Navbar.js";
+import Navbar from "./Navbar";
 import "../style/profile.css";
 
 const Profile = () => {
@@ -78,7 +78,7 @@ const Profile = () => {
                     user={user}
                 />
             </div>
-            <Navbar loggedIn={ user.token != null }/>
+    
         </div>
     );
 }
